@@ -1,7 +1,5 @@
-// dashboard_view.dart
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:sidebarx/sidebarx.dart';
 
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
@@ -11,12 +9,20 @@ class DashboardView extends StatefulWidget {
 }
 
 class _DashboardViewState extends State<DashboardView> {
-  final _controller = SidebarXController(selectedIndex: 1);
   DateTime _focusedDay = DateTime.now();
+  int _selectedIndex = 0;
+
+  final List<Map<String, dynamic>> _menuItems = [
+    {'icon': Icons.home_rounded, 'label': 'Inicio'},
+    {'icon': Icons.dashboard_rounded, 'label': 'Dashboard'},
+    {'icon': Icons.person_rounded, 'label': 'Perfil'},
+    {'icon': Icons.edit_note_rounded, 'label': 'Mis Hábitos'},
+  ];
 
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0E0F1A),
       appBar:
@@ -27,106 +33,14 @@ class _DashboardViewState extends State<DashboardView> {
                 iconTheme: const IconThemeData(color: Colors.white),
               )
               : null,
-      drawer:
-          isMobile
-              ? Drawer(
-                child: SidebarX(
-                  controller: _controller,
-                  theme: SidebarXTheme(
-                    margin: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1B1D2A),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    hoverColor: Colors.blue.withOpacity(0.1),
-                    textStyle: const TextStyle(color: Colors.white),
-                    selectedTextStyle: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    selectedItemDecoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    iconTheme: const IconThemeData(color: Colors.white54),
-                    selectedIconTheme: const IconThemeData(color: Colors.white),
-                  ),
-                  items: [
-                    SidebarXItem(icon: Icons.home_rounded, label: 'Inicio'),
-                    SidebarXItem(
-                      icon: Icons.dashboard_rounded,
-                      label: 'Mi Dashboard',
-                    ),
-                    SidebarXItem(
-                      icon: Icons.person_rounded,
-                      label: 'Mi Perfil',
-                    ),
-                    SidebarXItem(
-                      icon: Icons.edit_note_rounded,
-                      label: 'Mis Hábitos',
-                    ),
-                  ],
-                  footerItems: [
-                    SidebarXItem(
-                      icon: Icons.logout_rounded,
-                      label: 'Cerrar Sesión',
-                      onTap:
-                          () =>
-                              Navigator.pushReplacementNamed(context, '/login'),
-                    ),
-                  ],
-                ),
-              )
-              : null,
+      drawer: isMobile ? Drawer(child: _buildSidebar()) : null,
       body: Row(
         children: [
-          if (!isMobile)
-            SidebarX(
-              controller: _controller,
-              theme: SidebarXTheme(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1B1D2A),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                hoverColor: Colors.blue.withOpacity(0.1),
-                textStyle: const TextStyle(color: Colors.white),
-                selectedTextStyle: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-                selectedItemDecoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                iconTheme: const IconThemeData(color: Colors.white54),
-                selectedIconTheme: const IconThemeData(color: Colors.white),
-              ),
-              items: [
-                SidebarXItem(icon: Icons.home_rounded, label: 'Inicio'),
-                SidebarXItem(
-                  icon: Icons.dashboard_rounded,
-                  label: 'Mi Dashboard',
-                ),
-                SidebarXItem(icon: Icons.person_rounded, label: 'Mi Perfil'),
-                SidebarXItem(
-                  icon: Icons.edit_note_rounded,
-                  label: 'Mis Hábitos',
-                ),
-              ],
-              footerItems: [
-                SidebarXItem(
-                  icon: Icons.logout_rounded,
-                  label: 'Cerrar Sesión',
-                  onTap:
-                      () => Navigator.pushReplacementNamed(context, '/login'),
-                ),
-              ],
-            ),
+          if (!isMobile) _buildSidebar(),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: _buildMainContent(isMobile),
+              child: _buildMainContent(),
             ),
           ),
         ],
@@ -134,10 +48,97 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  Widget _buildMainContent(bool isMobile) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final cardWidth = isMobile ? double.infinity : (screenWidth - 100) / 3;
+  Widget _buildSidebar() {
+    return Container(
+      width: 220,
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1B1D2A),
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        children: [
+          const CircleAvatar(
+            radius: 32,
+            backgroundImage: AssetImage('assets/avatar.png'), // Opcional
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Usuario',
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          const SizedBox(height: 30),
+          ..._menuItems.asMap().entries.map((entry) {
+            int index = entry.key;
+            var item = entry.value;
+            bool selected = _selectedIndex == index;
 
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Material(
+                color:
+                    selected
+                        ? const Color(0xFF6366F1).withOpacity(0.3)
+                        : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: () => setState(() => _selectedIndex = index),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(item['icon'], color: Colors.white),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            item['label'],
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+          const Spacer(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                const Icon(Icons.logout, color: Colors.white54),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    },
+                    child: const Text(
+                      "Cerrar Sesión",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMainContent() {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,92 +156,34 @@ class _DashboardViewState extends State<DashboardView> {
             spacing: 12,
             runSpacing: 12,
             children: [
-              _buildStatCard(
-                Icons.bar_chart,
-                "Hábitos Activos",
-                "0",
-                cardWidth,
-              ),
-              _buildStatCard(
-                Icons.bolt,
-                "Mejor Racha Actual",
-                "0 días",
-                cardWidth,
-              ),
-              _buildStatCard(Icons.emoji_events, "Logros", "0", cardWidth),
+              _buildStatCard(Icons.bar_chart, "Hábitos Activos", "0"),
+              _buildStatCard(Icons.bolt, "Mejor Racha Actual", "0 días"),
+              _buildStatCard(Icons.emoji_events, "Logros", "0"),
             ],
           ),
           const SizedBox(height: 24),
-          Column(
-            children: [
-              _buildBox(
-                "Progreso de Hábitos",
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "¡Es hora de empezar!\nAún no tienes hábitos para seguir.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white60, fontSize: 14),
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6366F1),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        "Crea tu primer hábito",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildBox(
-                "Actividad Reciente",
-                const Text(
-                  "Aún no hay actividad reciente.",
-                  style: TextStyle(color: Colors.white60),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildBox("Calendario", _buildCalendar()),
-            ],
+          _buildBox("Progreso de Hábitos", _buildEmptyHabits()),
+          _buildBox(
+            "Actividad Reciente",
+            const Text(
+              "Aún no hay actividad reciente.",
+              style: TextStyle(color: Colors.white60),
+            ),
           ),
+          _buildBox("Calendario", _buildCalendar()),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(
-    IconData icon,
-    String title,
-    String value,
-    double width,
-  ) {
+  Widget _buildStatCard(IconData icon, String title, String value) {
     return SizedBox(
-      width: width,
+      width: 220,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: const Color(0xFF23263A),
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 6,
-              offset: const Offset(2, 4),
-            ),
-          ],
         ),
         child: Row(
           children: [
@@ -280,13 +223,6 @@ class _DashboardViewState extends State<DashboardView> {
       decoration: BoxDecoration(
         color: const Color(0xFF23263A),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 6,
-            offset: const Offset(2, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,6 +235,34 @@ class _DashboardViewState extends State<DashboardView> {
           child,
         ],
       ),
+    );
+  }
+
+  Widget _buildEmptyHabits() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Text(
+          "¡Es hora de empezar!\nAún no tienes hábitos para seguir.",
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white60, fontSize: 14),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton(
+          onPressed: () {},
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF6366F1),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: const Text(
+            "Crea tu primer hábito",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
     );
   }
 
