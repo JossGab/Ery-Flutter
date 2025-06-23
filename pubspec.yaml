@@ -40,7 +40,10 @@ dependencies:
   dio: ^5.4.3+1
   cookie_jar: ^4.0.6
   dio_cookie_manager: ^3.1.0
+  
   table_calendar: ^3.0.9
+  intl: ^0.19.0
+
   sidebarx: ^0.17.1
 
 dev_dependencies:

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart'; // Asegúrate de que la ruta sea correcta
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -13,29 +14,64 @@ class _LoginViewState extends State<LoginView> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  bool isLoading = false;
-  String? error;
+  bool _isLoading = false;
 
-  Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      isLoading = true;
-      error = null;
-    });
-
-    await Future.delayed(const Duration(seconds: 1));
-    Navigator.pushReplacementNamed(context, '/dashboard');
-
-    setState(() => isLoading = false);
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
-  Future<void> _signInWithGoogle() async {
-    final googleUser = await GoogleSignIn().signIn();
-    if (googleUser != null) {
-      print("Usuario de Google: ${googleUser.email}");
-      Navigator.pushReplacementNamed(context, '/dashboard');
+  // --- ¡MÉTODO DE LOGIN CORREGIDO! ---
+  Future<void> _handleLogin() async {
+    // 1. Validar que los campos no estén vacíos.
+    if (!_formKey.currentState!.validate()) return;
+
+    // 2. Activar el indicador de carga.
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 3. Llamar al método de login del AuthProvider.
+      //    Usamos listen: false porque estamos dentro de una función.
+      await Provider.of<AuthProvider>(
+        context,
+        listen: false,
+      ).login(_emailController.text, _passwordController.text);
+      // 4. Si el login es exitoso, el AuthWrapper se encargará de navegar
+      //    al Dashboard automáticamente. No necesitamos hacer nada aquí.
+    } catch (error) {
+      // 5. Si hay un error (ej: credenciales incorrectas), mostrarlo en un SnackBar.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      // 6. Pase lo que pase, desactivar el indicador de carga.
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  // Método para el login con Google (temporalmente informativo).
+  Future<void> _signInWithGoogle() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Inicio de sesión con Google no disponible temporalmente.',
+        ),
+      ),
+    );
+    // Aquí iría la lógica real cuando se configure.
   }
 
   @override
@@ -58,7 +94,11 @@ class _LoginViewState extends State<LoginView> {
                 children: [
                   const Text(
                     "Iniciar Sesión",
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   GestureDetector(
@@ -66,6 +106,7 @@ class _LoginViewState extends State<LoginView> {
                     child: const Text.rich(
                       TextSpan(
                         text: "¿No tienes una cuenta? ",
+                        style: TextStyle(color: Colors.white60),
                         children: [
                           TextSpan(
                             text: "Regístrate aquí",
@@ -76,7 +117,6 @@ class _LoginViewState extends State<LoginView> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
                   ElevatedButton.icon(
                     onPressed: _signInWithGoogle,
                     icon: Image.network(
@@ -91,7 +131,6 @@ class _LoginViewState extends State<LoginView> {
                       minimumSize: const Size.fromHeight(50),
                     ),
                   ),
-
                   const SizedBox(height: 16),
                   const Row(
                     children: [
@@ -107,10 +146,12 @@ class _LoginViewState extends State<LoginView> {
                     ],
                   ),
                   const SizedBox(height: 16),
-
-                  _buildTextField("Correo Electrónico", _emailController),
+                  _buildTextField(
+                    "Correo Electrónico",
+                    _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
                   const SizedBox(height: 16),
-
                   _buildTextField(
                     "Contraseña",
                     _passwordController,
@@ -118,10 +159,8 @@ class _LoginViewState extends State<LoginView> {
                   ),
                   const SizedBox(height: 24),
 
-                  if (error != null)
-                    Text(error!, style: const TextStyle(color: Colors.red)),
-
-                  isLoading
+                  // Muestra el indicador de carga o el botón de ingresar.
+                  _isLoading
                       ? const CircularProgressIndicator()
                       : ElevatedButton(
                         onPressed: _handleLogin,
@@ -129,7 +168,10 @@ class _LoginViewState extends State<LoginView> {
                           backgroundColor: const Color(0xFF2563EB),
                           minimumSize: const Size.fromHeight(50),
                         ),
-                        child: const Text("Ingresar"),
+                        child: const Text(
+                          "Ingresar",
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                 ],
               ),
@@ -144,10 +186,12 @@ class _LoginViewState extends State<LoginView> {
     String label,
     TextEditingController controller, {
     bool obscure = false,
+    TextInputType? keyboardType,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: obscure,
+      keyboardType: keyboardType,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
@@ -155,12 +199,17 @@ class _LoginViewState extends State<LoginView> {
         filled: true,
         fillColor: Colors.white10,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.white24),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.blueAccent),
+        ),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) return 'Campo obligatorio';
-        if (label.contains('Contraseña') && value.length < 6) {
-          return 'Mínimo 6 caracteres';
-        }
         return null;
       },
     );
