@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ery_flutter_app/core/routes/app_routes.dart';
 
 class SplashView extends StatelessWidget {
   const SplashView({super.key});
@@ -24,8 +23,8 @@ class SplashView extends StatelessWidget {
             ),
           ),
 
-          // Capa oscura encima de la imagen
-          Container(color: Colors.black.withOpacity(0.6)),
+          // Capa oscura encima de la imagen (¡CORREGIDO!)
+          Container(color: const Color.fromRGBO(0, 0, 0, 0.6)),
 
           // Contenido principal
           Padding(
@@ -45,7 +44,11 @@ class SplashView extends StatelessWidget {
                 RichText(
                   textAlign: TextAlign.center,
                   text: const TextSpan(
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Poppins',
+                    ), // Es bueno definir una fuente consistente
                     children: [
                       TextSpan(
                         text: "Transforma tus Hábitos, ",
@@ -67,15 +70,19 @@ class SplashView extends StatelessWidget {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF6D6DFF),
+                    backgroundColor: const Color(0xFF6D6DFF),
                     padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.register);
+                    // ¡CORREGIDO!
+                    Navigator.pushNamed(context, '/register');
                   },
                   child: const Text(
                     "Registrarse",
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -84,9 +91,13 @@ class SplashView extends StatelessWidget {
                     side: const BorderSide(color: Colors.white),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.login);
+                    // ¡CORREGIDO!
+                    Navigator.pushNamed(context, '/login');
                   },
                   child: const Text(
                     "Iniciar Sesión",
