@@ -1,15 +1,12 @@
-// lib/views/dashboard/dashboard_view.dart - VERSIÓN FINAL Y FUNCIONAL
+// lib/views/dashboard/dashboard_view.dart - VERSIÓN CORREGIDA SIN DOBLE SIDEBAR
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sidebarx/sidebarx.dart';
 
-// --- ¡IMPORTS AÑADIDOS! ---
-// Asegúrate de que estas rutas sean correctas para tu proyecto.
+// --- IMPORTS CORRECTOS ---
 import 'widgets/stat_card.dart';
 import 'widgets/dashboard_calendar.dart';
 import 'widgets/habit_progress_section.dart';
-import '../../widgets/sidebar_drawer.dart';
 import '../../providers/auth_provider.dart';
 
 class DashboardView extends StatefulWidget {
@@ -20,11 +17,6 @@ class DashboardView extends StatefulWidget {
 }
 
 class _DashboardViewState extends State<DashboardView> {
-  final _sidebarController = SidebarXController(
-    selectedIndex: 1,
-    extended: true,
-  );
-
   @override
   void initState() {
     super.initState();
@@ -35,30 +27,13 @@ class _DashboardViewState extends State<DashboardView> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 700;
     final authProvider = context.watch<AuthProvider>();
 
     return Scaffold(
       backgroundColor: const Color(0xFF0E0F1A),
-      appBar:
-          isMobile
-              ? AppBar(
-                backgroundColor: const Color(0xFF1B1D2A),
-                title: const Text('Ery', style: TextStyle(color: Colors.white)),
-                iconTheme: const IconThemeData(color: Colors.white),
-              )
-              : null,
-      drawer: isMobile ? SidebarDrawer(controller: _sidebarController) : null,
-      body: Row(
-        children: [
-          if (!isMobile) SidebarDrawer(controller: _sidebarController),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: _buildDashboardBody(authProvider),
-            ),
-          ),
-        ],
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: _buildDashboardBody(authProvider),
       ),
     );
   }
@@ -75,7 +50,6 @@ class _DashboardViewState extends State<DashboardView> {
         ),
       );
     }
-    // Usamos el getter de isLoading, no el de dashboardData que puede ser nulo
     if (authProvider.isLoading && authProvider.habits.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -83,7 +57,6 @@ class _DashboardViewState extends State<DashboardView> {
   }
 
   Widget _buildMainContent(AuthProvider authProvider) {
-    // Usamos el getter de `habits` que ahora está en el AuthProvider.
     final habits = authProvider.habits;
 
     if (habits.isEmpty && !authProvider.isLoading) {
@@ -136,7 +109,7 @@ class _DashboardViewState extends State<DashboardView> {
           _buildSectionContainer(
             title: "Progreso de Hábitos",
             child: HabitProgressSection(habits: []),
-          ), // Pasamos la lista de hábitos
+          ),
           _buildSectionContainer(
             title: "Calendario de Actividad",
             child: const DashboardCalendar(),

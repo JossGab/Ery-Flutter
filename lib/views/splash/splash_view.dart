@@ -8,22 +8,21 @@ class SplashView extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Imagen desde URL
+          // Fondo con imagen
           SizedBox.expand(
             child: Image.network(
               'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop',
               fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
                 return const Center(child: CircularProgressIndicator());
               },
-              errorBuilder:
-                  (context, error, stackTrace) =>
-                      const Center(child: Text("Error cargando la imagen")),
+              errorBuilder: (_, __, ___) =>
+                  const Center(child: Text("Error cargando la imagen")),
             ),
           ),
 
-          // Capa oscura encima de la imagen (¡CORREGIDO!)
+          // Capa oscura encima
           Container(color: const Color.fromRGBO(0, 0, 0, 0.6)),
 
           // Contenido principal
@@ -41,6 +40,7 @@ class SplashView extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
+
                 RichText(
                   textAlign: TextAlign.center,
                   text: const TextSpan(
@@ -48,7 +48,7 @@ class SplashView extends StatelessWidget {
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Poppins',
-                    ), // Es bueno definir una fuente consistente
+                    ),
                     children: [
                       TextSpan(
                         text: "Transforma tus Hábitos, ",
@@ -62,12 +62,15 @@ class SplashView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 const Text(
-                  '"Ery" es tu compañero digital para construir rutinas positivas, superar malos hábitos y gamificar tu progreso personal.',
+                  '"Ery" es tu compañero digital para construir rutinas positivas, '
+                  'superar malos hábitos y gamificar tu progreso personal.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
                 const SizedBox(height: 24),
+
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6D6DFF),
@@ -77,7 +80,6 @@ class SplashView extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
-                    // ¡CORREGIDO!
                     Navigator.pushNamed(context, '/register');
                   },
                   child: const Text(
@@ -86,6 +88,7 @@ class SplashView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
+
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Colors.white),
@@ -96,7 +99,6 @@ class SplashView extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
-                    // ¡CORREGIDO!
                     Navigator.pushNamed(context, '/login');
                   },
                   child: const Text(
