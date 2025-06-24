@@ -1,59 +1,45 @@
-// lib/services/auth_service.dart (Versión Mejorada)
-import 'package:dio/dio.dart';
-import 'package:ery_flutter_app/core/network/api_client.dart';
-import 'package:ery_flutter_app/models/user_model.dart'; // ¡Importar el modelo!
+// lib/services/auth_service.dart (Versión Corregida y Simplificada)
+
+import 'package:ery_flutter_app/services/api_service.dart';
+import 'package:ery_flutter_app/models/user_model.dart';
 
 class AuthService {
-  final Dio _dio = ApiClient.dio;
+  // Obtenemos la instancia única (singleton) de nuestro ApiService funcional.
+  // Todas las llamadas a la red pasarán por aquí.
+  final ApiService _apiService = ApiService();
 
-  // El método de login no cambia mucho, pero ahora el Provider lo usará.
-  Future<void> login(String email, String password) async {
+  /// El método login ahora actúa como un puente directo al ApiService.
+  /// Llama a la API, y si tiene éxito, convierte la respuesta en un objeto User.
+  Future<User> login(String email, String password) async {
     try {
-      final response = await _dio.post(
-        '/auth/callback/credentials',
-        data: {"email": email, "password": password, "redirect": false},
-      );
-      if (response.statusCode != 200 || response.data['url'] == null) {
-        throw Exception("Credenciales inválidas.");
-      }
-    } on DioException catch (e) {
-      final errorMessage = e.response?.data['message'] ?? "Error en el login.";
-      throw Exception(errorMessage);
+      // 1. Llama al método login de ApiService, que maneja el token.
+      final userData = await _apiService.login(email, password);
+
+      // 2. Convierte el mapa JSON de la respuesta en nuestro modelo User.
+      return User.fromJson(userData);
+    } catch (e) {
+      // 3. Si hay un error (ej. credenciales incorrectas), lo re-lanza
+      //    para que el AuthProvider y el UI puedan mostrar el mensaje.
+      rethrow;
     }
   }
 
-  // ¡NUEVO MÉTODO! Para obtener la sesión del usuario.
-  Future<User?> getSession() async {
-    try {
-      final response = await _dio.get('/auth/session');
-      if (response.statusCode == 200 && response.data['user'] != null) {
-        // Devuelve un objeto User creado desde el JSON
-        return User.fromJson(response.data['user']);
-      }
-      return null;
-    } on DioException {
-      // Si hay un error (ej. 401 no autorizado), significa que no hay sesión.
-      return null;
-    }
-  }
-
-  // El método de registro puede permanecer igual.
+  /// Lo mismo para el registro. Pasa la llamada directamente al ApiService.
   Future<void> register({
     required String name,
     required String email,
     required String password,
   }) async {
-    // ... tu código de registro actual ...
+    try {
+      await _apiService.register(name: name, email: email, password: password);
+    } catch (e) {
+      rethrow;
+    }
   }
 
-  // ¡NUEVO MÉTODO! Para cerrar sesión.
+  /// El logout simplemente llama al método estático para borrar el token en ApiService.
   Future<void> logout() async {
-    try {
-      // Llama al endpoint de signout y no nos preocupamos por la respuesta.
-      await _dio.post('/auth/signout', data: {});
-    } catch (e) {
-      // Ignoramos errores, ya que solo queremos asegurarnos de que el cliente olvide la sesión.
-      print("Error durante el logout, pero se procederá en el cliente: $e");
-    }
+    // No necesita llamar a la API, solo borra el token local.
+    await ApiService.deleteToken();
   }
 }

@@ -2,7 +2,7 @@
 ================================================================================
  ARCHIVO: lib/services/api_service.dart
  INSTRUCCIONES: Reemplaza el contenido de este archivo.
- Esta versión está corregida y no tiene métodos duplicados.
+ Esta versión añade un log para verificar el token antes de cada envío.
 ================================================================================
 */
 import 'dart:convert';
@@ -30,6 +30,29 @@ class ApiService {
     await _storage.delete(key: 'jwt_token');
   }
 
+  // --- FUNCIÓN PRIVADA PARA MANEJAR ERRORES DE FORMA CONSISTENTE ---
+  Exception _handleErrorResponse(http.Response response) {
+    debugPrint(
+      'API Error - Status: ${response.statusCode}, Body: ${response.body}',
+    );
+    // Si el error es de autenticación, borramos el token y cerramos sesión.
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      deleteToken();
+      return Exception(
+        'Tu sesión ha expirado. Por favor, inicia sesión de nuevo.',
+      );
+    }
+
+    // Para cualquier otro error, mostramos el mensaje del servidor.
+    try {
+      final errorData = json.decode(response.body);
+      return Exception(errorData['message'] ?? 'Ocurrió un error inesperado.');
+    } catch (_) {
+      // Si el cuerpo de la respuesta no es un JSON válido
+      return Exception('Ocurrió un error inesperado en el servidor.');
+    }
+  }
+
   /// Inicia sesión y devuelve los datos del usuario.
   Future<Map<String, dynamic>> login(String email, String password) async {
     final url = Uri.parse('$_baseUrl/auth/token');
@@ -51,8 +74,7 @@ class ApiService {
         throw Exception('Respuesta de API inválida.');
       }
     } else {
-      final errorData = json.decode(response.body);
-      throw Exception(errorData['message'] ?? 'Error al iniciar sesión');
+      throw _handleErrorResponse(response);
     }
   }
 
@@ -63,7 +85,6 @@ class ApiService {
     required String password,
   }) async {
     final url = Uri.parse('$_baseUrl/auth/register');
-    debugPrint('Registrando en: $url');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -73,81 +94,79 @@ class ApiService {
         'password': password,
       }),
     );
-    debugPrint('Respuesta de registro: ${response.statusCode}');
     if (response.statusCode == 201) {
       return json.decode(response.body);
     } else {
-      final errorData = json.decode(response.body);
-      throw Exception(errorData['message'] ?? 'Error durante el registro.');
+      throw _handleErrorResponse(response);
+    }
+  }
+
+  // --- MÉTODOS QUE REQUIEREN AUTENTICACIÓN ---
+
+  Future<T> _makeAuthenticatedRequest<T>(
+    Future<http.Response> Function(String token) request,
+  ) async {
+    final token = await getToken();
+    if (token == null) {
+      throw Exception('No autenticado.');
+    }
+
+    // **AÑADIDO**: Log para verificar el token antes de usarlo.
+    debugPrint('Enviando petición con token: $token');
+
+    final response = await request(token);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      // Asumimos que T es el tipo de dato decodificado del JSON
+      return json.decode(response.body) as T;
+    } else {
+      throw _handleErrorResponse(response);
     }
   }
 
   /// Obtiene los datos del dashboard del usuario autenticado.
   Future<Map<String, dynamic>> getDashboardData() async {
-    final token = await getToken();
-    if (token == null) throw Exception('No autenticado.');
-
-    final url = Uri.parse('$_baseUrl/dashboard');
-    final response = await http.get(
-      url,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      await deleteToken();
-      throw Exception('Sesión expirada. Inicia sesión de nuevo.');
-    }
+    return await _makeAuthenticatedRequest<Map<String, dynamic>>((token) {
+      final url = Uri.parse('$_baseUrl/dashboard');
+      return http.get(url, headers: {'Authorization': 'Bearer $token'});
+    });
   }
 
   /// Obtiene la lista de hábitos del usuario autenticado.
   Future<List<dynamic>> getHabits() async {
-    final token = await getToken();
-    if (token == null) throw Exception('No autenticado.');
-
-    final url = Uri.parse('$_baseUrl/habits');
-    final response = await http.get(
-      url,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body)['habits'];
-    } else {
-      throw Exception('Error al obtener los hábitos.');
-    }
+    final Map<String, dynamic> data =
+        await _makeAuthenticatedRequest<Map<String, dynamic>>((token) {
+          final url = Uri.parse('$_baseUrl/habits');
+          return http.get(url, headers: {'Authorization': 'Bearer $token'});
+        });
+    return data['habits'];
   }
 
   /// Crea un nuevo hábito para el usuario autenticado.
   Future<Map<String, dynamic>> createHabit(
     Map<String, dynamic> habitData,
   ) async {
-    final token = await getToken();
-    if (token == null) throw Exception('No autenticado.');
-
-    final url = Uri.parse('$_baseUrl/habits');
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: json.encode(habitData),
-    );
-
-    if (response.statusCode == 201) {
-      return json.decode(response.body)['habit'];
-    } else {
-      final errorData = json.decode(response.body);
-      throw Exception(errorData['message'] ?? 'Error al crear el hábito.');
-    }
+    final Map<String, dynamic> data =
+        await _makeAuthenticatedRequest<Map<String, dynamic>>((token) {
+          final url = Uri.parse('$_baseUrl/habits');
+          return http.post(
+            url,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: json.encode(habitData),
+          );
+        });
+    return data['habit'];
   }
 
   /// Registra el progreso de un hábito para el usuario autenticado.
   Future<void> logHabitProgress(Map<String, dynamic> logData) async {
     final token = await getToken();
     if (token == null) throw Exception('No autenticado.');
+
+    debugPrint('Enviando petición de progreso con token: $token');
 
     final url = Uri.parse('$_baseUrl/habits/log');
     final response = await http.post(
@@ -160,10 +179,7 @@ class ApiService {
     );
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      final errorData = json.decode(response.body);
-      throw Exception(
-        errorData['message'] ?? 'Error al registrar el progreso.',
-      );
+      throw _handleErrorResponse(response);
     }
   }
 }
