@@ -1,14 +1,15 @@
+// lib/views/dashboard/dashboard_view.dart - VERSIÓN FINAL Y FUNCIONAL
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sidebarx/sidebarx.dart';
 
-// Importamos los widgets que hemos creado
+// --- ¡IMPORTS AÑADIDOS! ---
+// Asegúrate de que estas rutas sean correctas para tu proyecto.
 import 'widgets/stat_card.dart';
 import 'widgets/dashboard_calendar.dart';
 import 'widgets/habit_progress_section.dart';
-
-// Importamos el sidebar genérico y el provider
-import '../../widgets/sidebar_drawer.dart'; // Usamos el sidebar que ya existía
+import '../../widgets/sidebar_drawer.dart';
 import '../../providers/auth_provider.dart';
 
 class DashboardView extends StatefulWidget {
@@ -19,7 +20,6 @@ class DashboardView extends StatefulWidget {
 }
 
 class _DashboardViewState extends State<DashboardView> {
-  // El controlador para el SidebarX
   final _sidebarController = SidebarXController(
     selectedIndex: 1,
     extended: true,
@@ -28,7 +28,6 @@ class _DashboardViewState extends State<DashboardView> {
   @override
   void initState() {
     super.initState();
-    // Al iniciar la pantalla, le pedimos al AuthProvider que cargue los datos.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AuthProvider>(context, listen: false).fetchDashboardData();
     });
@@ -37,8 +36,7 @@ class _DashboardViewState extends State<DashboardView> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 700;
-    // Escuchamos los cambios del AuthProvider para redibujar la UI.
-    final authProvider = Provider.of<AuthProvider>(context);
+    final authProvider = context.watch<AuthProvider>();
 
     return Scaffold(
       backgroundColor: const Color(0xFF0E0F1A),
@@ -50,21 +48,14 @@ class _DashboardViewState extends State<DashboardView> {
                 iconTheme: const IconThemeData(color: Colors.white),
               )
               : null,
-      // En móvil, el sidebar es un Drawer.
       drawer: isMobile ? SidebarDrawer(controller: _sidebarController) : null,
       body: Row(
         children: [
-          // En pantallas grandes, el sidebar está fijo a la izquierda.
           if (!isMobile) SidebarDrawer(controller: _sidebarController),
-
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
-              // Mostramos un indicador de carga mientras se obtienen los datos.
-              child:
-                  authProvider.isDashboardLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : _buildMainContent(authProvider),
+              child: _buildDashboardBody(authProvider),
             ),
           ),
         ],
@@ -72,22 +63,40 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  /// Construye el contenido principal de la pantalla del dashboard.
-  /// Ahora es mucho más corto y legible.
-  Widget _buildMainContent(AuthProvider authProvider) {
-    // Extraemos los datos del dashboard desde el provider.
-    final habitsWithStats =
-        authProvider.dashboardData?['habits_con_estadisticas'] as List? ?? [];
+  Widget _buildDashboardBody(AuthProvider authProvider) {
+    if (authProvider.isInitializing) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (!authProvider.isAuthenticated) {
+      return const Center(
+        child: Text(
+          'Sesión no válida. Por favor, inicia sesión de nuevo.',
+          style: TextStyle(color: Colors.white70),
+        ),
+      );
+    }
+    // Usamos el getter de isLoading, no el de dashboardData que puede ser nulo
+    if (authProvider.isLoading && authProvider.habits.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return _buildMainContent(authProvider);
+  }
 
-    // Calculamos las estadísticas (KPIs).
-    final activeHabitsCount = habitsWithStats.length;
-    final bestStreak = habitsWithStats.whereType<Map>().fold<int>(0, (
-      max,
-      habit,
-    ) {
-      final currentStreak = habit['racha_actual'] ?? 0;
-      return currentStreak > max ? currentStreak : max;
-    });
+  Widget _buildMainContent(AuthProvider authProvider) {
+    // Usamos el getter de `habits` que ahora está en el AuthProvider.
+    final habits = authProvider.habits;
+
+    if (habits.isEmpty && !authProvider.isLoading) {
+      return const Center(
+        child: Text(
+          '¡Bienvenido! Crea tu primer hábito para empezar.',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+      );
+    }
+
+    final activeHabitsCount = authProvider.activeHabitsCount;
+    final bestStreak = authProvider.bestStreak;
 
     return SingleChildScrollView(
       child: Column(
@@ -102,12 +111,10 @@ class _DashboardViewState extends State<DashboardView> {
             ),
           ),
           const SizedBox(height: 24),
-          // Usamos el widget Wrap para que las tarjetas se ajusten automáticamente.
           Wrap(
             spacing: 16,
             runSpacing: 16,
             children: [
-              // --- LLAMAMOS A NUESTRO WIDGET REUTILIZABLE ---
               StatCard(
                 icon: Icons.bar_chart_rounded,
                 title: "Hábitos Activos",
@@ -121,17 +128,15 @@ class _DashboardViewState extends State<DashboardView> {
               const StatCard(
                 icon: Icons.emoji_events_rounded,
                 title: "Logros",
-                value: "0", // Placeholder
+                value: "0",
               ),
             ],
           ),
           const SizedBox(height: 24),
-
-          // --- LLAMAMOS A NUESTROS WIDGETS DE SECCIÓN ---
           _buildSectionContainer(
             title: "Progreso de Hábitos",
-            child: const HabitProgressSection(),
-          ),
+            child: HabitProgressSection(habits: []),
+          ), // Pasamos la lista de hábitos
           _buildSectionContainer(
             title: "Calendario de Actividad",
             child: const DashboardCalendar(),
@@ -141,7 +146,6 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  /// Un widget contenedor genérico para cada sección del dashboard.
   Widget _buildSectionContainer({
     required String title,
     required Widget child,
@@ -151,9 +155,7 @@ class _DashboardViewState extends State<DashboardView> {
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(
-          0xFF1B1D2A,
-        ), // Un color ligeramente diferente para las secciones
+        color: const Color(0xFF1B1D2A),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(

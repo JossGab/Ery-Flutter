@@ -1,7 +1,7 @@
+// lib/views/dashboard/widgets/stat_card.dart
+
 import 'package:flutter/material.dart';
 
-/// Un widget reutilizable que muestra una tarjeta con un ícono,
-/// un título y un valor. Usado en el Dashboard para las KPIs (Key Performance Indicators).
 class StatCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -16,43 +16,36 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Usamos un SizedBox para darle un ancho fijo y que se alinee bien en el Wrap.
-    return SizedBox(
-      width: 220,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF23263A), // Color de fondo de la tarjeta
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.white70, size: 28),
-            const SizedBox(width: 16),
-            // Flexible asegura que el texto no se desborde si es muy largo.
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(color: Colors.white60, fontSize: 14),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1B1D2A),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize:
+            MainAxisSize.min, // Para que la tarjeta se ajuste a su contenido
+        children: [
+          Icon(icon, color: Colors.blueAccent, size: 32),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
               ),
-            ),
-          ],
-        ),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

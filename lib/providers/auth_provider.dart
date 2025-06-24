@@ -1,152 +1,150 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-// Asegúrate de que estas rutas sean correctas para tu proyecto
+import 'package:jwt_decoder/jwt_decoder.dart';
+
+// Asegúrate de que las rutas a tus archivos sean correctas
 import '../services/api_service.dart';
 import '../models/user_model.dart';
+import '../models/habit_model.dart';
 
 class AuthProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
-  // --- ESTADO DE AUTENTICACIÓN ---
-  bool _isAuthenticated = false;
-  String? _token;
   User? _user;
   bool _isInitializing = true;
-
-  // --- ¡NUEVO! ESTADO DEL DASHBOARD ---
-  bool _isDashboardLoading = false;
-  Map<String, dynamic>? _dashboardData;
-  Map<String, dynamic>? _activityLog;
+  bool _isLoading = false;
+  List<Habit> _habits = [];
 
   // --- GETTERS PÚBLICOS ---
-  bool get isAuthenticated => _isAuthenticated;
-  String? get token => _token;
   User? get user => _user;
+  bool get isAuthenticated => _user != null;
   bool get isInitializing => _isInitializing;
-  bool get isDashboardLoading => _isDashboardLoading;
-  Map<String, dynamic>? get dashboardData => _dashboardData;
-  Map<String, dynamic>? get activityLog => _activityLog;
+  bool get isLoading => _isLoading;
+  List<Habit> get habits => _habits;
+  int get activeHabitsCount => _habits.length;
 
+  int get bestStreak {
+    if (_habits.isEmpty) return 0;
+    return _habits.fold(
+      0,
+      (max, h) => h.rachaActual > max ? h.rachaActual : max,
+    );
+  }
+
+  // --- CONSTRUCTOR ---
   AuthProvider() {
     tryAutoLogin();
   }
 
-  // --- MÉTODOS DE AUTENTICACIÓN ---
+  // --- LÓGICA DE AUTENTICACIÓN ---
 
-  /// Intenta iniciar sesión automáticamente al abrir la app.
   Future<void> tryAutoLogin() async {
+    final token = await ApiService.getToken();
+    if (token == null || JwtDecoder.isExpired(token)) {
+      await ApiService.deleteToken();
+      _isInitializing = false;
+      notifyListeners();
+      return;
+    }
     try {
-      final storedToken = await _storage.read(key: 'authToken');
-      final storedUser = await _storage.read(key: 'userData');
-
-      if (storedToken != null && storedUser != null) {
-        _token = storedToken;
-        _user = User.fromJson(json.decode(storedUser));
-        _isAuthenticated = true;
-      }
+      final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+      _user = User.fromJson(decodedToken);
+      await fetchDashboardData(); // Carga los datos después de un auto-login exitoso
     } catch (e) {
-      _isAuthenticated = false;
-      _token = null;
-      _user = null;
+      debugPrint("Fallo en tryAutoLogin: $e");
+      await logout();
     } finally {
       _isInitializing = false;
       notifyListeners();
     }
   }
 
-  /// Inicia sesión del usuario y guarda el token y los datos.
   Future<void> login(String email, String password) async {
+    _setLoading(true);
     try {
-      final response = await _apiService.login(
-        email: email,
-        password: password,
-      );
-
-      if (response['success'] == true &&
-          response.containsKey('token') &&
-          response.containsKey('user')) {
-        _token = response['token'];
-        _user = User.fromJson(response['user']);
-        _isAuthenticated = true;
-
-        await _storage.write(key: 'authToken', value: _token);
-        await _storage.write(
-          key: 'userData',
-          value: json.encode(_user!.toJson()),
-        );
-
-        notifyListeners();
-      } else {
-        throw Exception(response['message'] ?? 'Respuesta de login inválida.');
-      }
+      final userData = await _apiService.login(email, password);
+      _user = User.fromJson(userData);
+      // La navegación la maneja el AuthWrapper, ahora solo notificamos
+      _setLoading(false);
     } catch (e) {
+      _setLoading(false);
       rethrow;
     }
   }
 
-  /// Registra un nuevo usuario.
   Future<void> register({
     required String name,
     required String email,
     required String password,
   }) async {
+    _setLoading(true);
     try {
       await _apiService.register(name: name, email: email, password: password);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Cierra la sesión del usuario y limpia los datos almacenados.
-  Future<void> logout() async {
-    _isAuthenticated = false;
-    _token = null;
-    _user = null;
-    await _storage.deleteAll();
-    notifyListeners();
-  }
-
-  // --- ¡NUEVO! MÉTODOS PARA EL DASHBOARD ---
-
-  /// Carga los datos iniciales para la pantalla del dashboard.
-  Future<void> fetchDashboardData() async {
-    if (_token == null || _isDashboardLoading) return;
-
-    _isDashboardLoading = true;
-    notifyListeners();
-
-    try {
-      final now = DateTime.now();
-
-      // Realizamos las dos llamadas a la API en paralelo para más eficiencia.
-      final results = await Future.wait([
-        _apiService.getDashboardData(_token!),
-        _apiService.getActivityLog(_token!, now.year, now.month),
-      ]);
-
-      _dashboardData = results[0];
-      _activityLog = results[1];
-    } catch (e) {
-      debugPrint("Error al obtener los datos del dashboard: $e");
-      // Opcional: podrías guardar el mensaje de error para mostrarlo en la UI.
     } finally {
-      _isDashboardLoading = false;
+      _setLoading(false);
+    }
+  }
+
+  Future<void> logout() async {
+    _user = null;
+    _habits = [];
+    await ApiService.deleteToken();
+    notifyListeners();
+  }
+
+  // ===================================================================
+  // MÉTODOS AÑADIDOS PARA MANEJAR HÁBITOS
+  // ===================================================================
+
+  /// Llama al ApiService para crear un nuevo hábito y luego refresca la lista.
+  Future<void> createHabit(Map<String, dynamic> habitData) async {
+    _setLoading(true);
+    try {
+      await _apiService.createHabit(habitData);
+      // Después de crear, volvemos a pedir los datos del dashboard para tener la lista actualizada.
+      await fetchDashboardData();
+    } catch (e) {
+      rethrow; // Propagamos el error para que el UI lo muestre.
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Llama al ApiService para registrar el progreso y luego refresca los datos de los hábitos.
+  Future<void> logHabitProgress(Map<String, dynamic> logData) async {
+    // No activamos el loading global para que la UI se sienta más fluida.
+    // El botón individual puede mostrar su propio estado de carga si es necesario.
+    try {
+      await _apiService.logHabitProgress(logData);
+      // Hacemos una recarga silenciosa de los datos para actualizar las rachas.
+      await fetchDashboardData();
+    } catch (e) {
+      rethrow; // Propagamos el error para que el UI lo muestre.
+    }
+  }
+  // ===================================================================
+
+  /// Obtiene los datos del dashboard (hábitos y estadísticas) y los guarda en el provider.
+  Future<void> fetchDashboardData() async {
+    try {
+      final data = await _apiService.getDashboardData();
+      final habitsData = data['habits_con_estadisticas'] as List;
+      _habits = habitsData.map((json) => Habit.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint("Fallo al obtener datos del dashboard: $e");
+      if (e.toString().contains('Sesión expirada')) {
+        await logout();
+      }
+      rethrow;
+    } finally {
+      // Notificamos al UI que los datos (o la falta de ellos) han sido actualizados.
       notifyListeners();
     }
   }
 
-  /// Carga el registro de actividad para un mes específico (para la navegación del calendario).
-  Future<void> fetchActivityLogForMonth(int year, int month) async {
-    if (_token == null) return;
-
-    try {
-      _activityLog = await _apiService.getActivityLog(_token!, year, month);
-      notifyListeners();
-    } catch (e) {
-      debugPrint("Error al obtener el log de actividad para $year-$month: $e");
-    }
+  /// Helper para gestionar el estado de carga y notificar a los listeners.
+  void _setLoading(bool loading) {
+    if (_isLoading == loading) return;
+    _isLoading = loading;
+    notifyListeners();
   }
 }
