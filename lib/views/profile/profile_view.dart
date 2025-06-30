@@ -1,17 +1,21 @@
+/*
+================================================================================
+ ARCHIVO: lib/views/profile/profile_view.dart (Versión Actualizada)
+================================================================================
+*/
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../models/user_model.dart'; // Asegúrate de importar tu modelo de usuario
+import '../../models/user_model.dart';
+import 'edit_profile_view.dart'; // <-- Importamos la vista de edición
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Obtenemos el usuario del AuthProvider
     final User? user = Provider.of<AuthProvider>(context).user;
 
-    // Si por alguna razón el usuario es nulo, mostramos un mensaje.
     if (user == null) {
       return const Center(
         child: Text("No se pudieron cargar los datos del usuario."),
@@ -19,7 +23,22 @@ class ProfileView extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent, // Para que tome el color del layout
+      backgroundColor: Colors.transparent,
+      // --- AÑADIDO ---
+      // Botón flotante para acceder a la edición del perfil.
+      // Es un estándar de diseño muy reconocible.
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          // Usamos Navigator.push para poner la pantalla de edición ENCIMA de la actual.
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const EditProfileView()),
+          );
+        },
+        label: const Text('Editar Perfil'),
+        icon: const Icon(Icons.edit_outlined),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
       body: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 500),
@@ -39,8 +58,6 @@ class ProfileView extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                // --- CORRECCIÓN ---
-                // Si user.name es nulo, muestra 'Nombre no disponible'
                 user.name ?? 'Nombre no disponible',
                 style: const TextStyle(
                   fontSize: 28,
@@ -51,25 +68,18 @@ class ProfileView extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                // --- CORRECCIÓN ---
-                user.email ?? 'Email no disponible',
+                user.email, // El email no debería ser nulo si el usuario existe
                 style: const TextStyle(fontSize: 16, color: Colors.white60),
               ),
               const SizedBox(height: 32),
               const Divider(color: Colors.white24),
               const SizedBox(height: 16),
-              // --- CORRECCIÓN ---
-              // Manejamos la posibilidad de que roles sea nulo o vacío
               _buildProfileInfoTile(
                 Icons.shield_outlined,
                 "Rol",
                 user.roles.isNotEmpty ? user.roles.join(', ') : 'No asignado',
               ),
-              _buildProfileInfoTile(
-                Icons.numbers,
-                "ID de Usuario",
-                user.id ?? 'N/A',
-              ),
+              _buildProfileInfoTile(Icons.numbers, "ID de Usuario", user.id),
             ],
           ),
         ),

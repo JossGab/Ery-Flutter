@@ -182,4 +182,24 @@ class ApiService {
       throw _handleErrorResponse(response);
     }
   }
+
+  // ===================================================================
+  // MÉTODO CORREGIDO: Apunta al endpoint correcto en el backend.
+  // ===================================================================
+  /// Obtiene el registro de actividad de un mes y año específicos.
+  Future<Map<String, dynamic>> getActivityLog(int year, int month) async {
+    return await _makeAuthenticatedRequest<Map<String, dynamic>>((token) {
+      final url = Uri.parse('$_baseUrl/activity-log?year=$year&month=$month');
+
+      debugPrint('Fetching activity log from: $url');
+
+      return http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json', // Es buena práctica incluirlo
+        },
+      );
+    });
+  }
 }

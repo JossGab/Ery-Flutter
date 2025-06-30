@@ -47,86 +47,133 @@ class SidebarDrawer extends StatelessWidget {
                 selectedIconTheme: const IconThemeData(color: Colors.white),
                 decoration: const BoxDecoration(color: Colors.transparent),
               ),
-              headerBuilder: (context, extended) => Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      backgroundColor: Colors.white24,
-                      child: Icon(Icons.person, color: Colors.white),
+              headerBuilder:
+                  (context, extended) => Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        const CircleAvatar(
+                          backgroundColor: Colors.white24,
+                          child: Icon(Icons.person, color: Colors.white),
+                        ),
+                        if (extended) ...[
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              user?.name ?? 'Usuario',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    if (extended) ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          user?.name ?? 'Usuario',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              items: const [
-                SidebarXItem(icon: Icons.home_rounded, label: 'Inicio'),
-                SidebarXItem(icon: Icons.dashboard_rounded, label: 'Mi Dashboard'),
-                SidebarXItem(icon: Icons.person_rounded, label: 'Mi Perfil'),
-                SidebarXItem(icon: Icons.edit_note_rounded, label: 'Mis Hábitos'),
-              ],
-              footerBuilder: (context, extended) => Column(
-                children: [
-                  const Divider(color: Colors.white12),
-                  ListTile(
-                    leading: const Icon(Icons.logout_rounded, color: Colors.white),
-                    title: extended
-                        ? const Text("Cerrar Sesión",
-                            style: TextStyle(color: Colors.white))
-                        : null,
-                    onTap: () async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (_) => BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: AlertDialog(
-                            backgroundColor: Colors.white.withOpacity(0.08),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            title: const Text(
-                              "¿Cerrar sesión?",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            content: const Text(
-                              "¿Estás seguro de que deseas cerrar sesión?",
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                            actions: [
-                              TextButton(
-                                child: const Text("Cancelar", style: TextStyle(color: Colors.white54)),
-                                onPressed: () => Navigator.of(context).pop(false),
-                              ),
-                              TextButton(
-                                child: const Text("Cerrar sesión", style: TextStyle(color: Colors.redAccent)),
-                                onPressed: () => Navigator.of(context).pop(true),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-
-                      if (confirm == true && context.mounted) {
-                        await context.read<AuthProvider>().logout();
-                        Navigator.pushReplacementNamed(context, '/login');
-                      }
-                    },
                   ),
-                  const SizedBox(height: 12),
-                ],
-              ),
+              // ===================================================================
+              // SECCIÓN DE ITEMS ACTUALIZADA
+              // Se ha añadido "Mis Logros"
+              // ===================================================================
+              items: const [
+                SidebarXItem(
+                  icon: Icons.dashboard_rounded,
+                  label: 'Mi Dashboard',
+                ),
+                SidebarXItem(
+                  icon: Icons.edit_note_rounded,
+                  label: 'Mis Hábitos',
+                ),
+                // --- AÑADIDO ---
+                SidebarXItem(
+                  icon: Icons.emoji_events_rounded,
+                  label: 'Mis Logros',
+                ),
+                SidebarXItem(icon: Icons.person_rounded, label: 'Mi Perfil'),
+              ],
+              footerBuilder:
+                  (context, extended) => Column(
+                    children: [
+                      const Divider(color: Colors.white12),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.logout_rounded,
+                          color: Colors.white,
+                        ),
+                        title:
+                            extended
+                                ? const Text(
+                                  "Cerrar Sesión",
+                                  style: TextStyle(color: Colors.white),
+                                )
+                                : null,
+                        onTap: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder:
+                                (_) => BackdropFilter(
+                                  filter: ImageFilter.blur(
+                                    sigmaX: 10,
+                                    sigmaY: 10,
+                                  ),
+                                  child: AlertDialog(
+                                    backgroundColor: Colors.white.withOpacity(
+                                      0.08,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    title: const Text(
+                                      "¿Cerrar sesión?",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    content: const Text(
+                                      "¿Estás seguro de que deseas cerrar sesión?",
+                                      style: TextStyle(color: Colors.white70),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        child: const Text(
+                                          "Cancelar",
+                                          style: TextStyle(
+                                            color: Colors.white54,
+                                          ),
+                                        ),
+                                        onPressed:
+                                            () => Navigator.of(
+                                              context,
+                                            ).pop(false),
+                                      ),
+                                      TextButton(
+                                        child: const Text(
+                                          "Cerrar sesión",
+                                          style: TextStyle(
+                                            color: Colors.redAccent,
+                                          ),
+                                        ),
+                                        onPressed:
+                                            () =>
+                                                Navigator.of(context).pop(true),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                          );
+
+                          if (confirm == true && context.mounted) {
+                            await context.read<AuthProvider>().logout();
+                            // Usamos pushAndRemoveUntil para limpiar la pila de navegación
+                            Navigator.of(context).pushNamedAndRemoveUntil(
+                              '/login',
+                              (route) => false,
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
             ),
           ),
         ),

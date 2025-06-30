@@ -6,6 +6,11 @@ import '../services/api_service.dart';
 import '../models/user_model.dart';
 import '../models/habit_model.dart';
 
+// --- AÑADIDO ---
+// Imports necesarios para el sistema de logros
+import '../services/achievement_service.dart';
+import '../models/achievement_model.dart';
+
 class AuthProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
 
@@ -14,6 +19,11 @@ class AuthProvider with ChangeNotifier {
   bool _isLoading = false;
   List<Habit> _habits = [];
 
+  // --- AÑADIDO ---
+  // Propiedades para gestionar los logros
+  final AchievementService _achievementService = AchievementService();
+  List<Achievement> _newlyUnlockedAchievements = [];
+
   // --- GETTERS PÚBLICOS ---
   User? get user => _user;
   bool get isAuthenticated => _user != null;
@@ -21,6 +31,10 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   List<Habit> get habits => _habits;
   int get activeHabitsCount => _habits.length;
+
+  // --- AÑADIDO ---
+  // Getter para que la UI pueda acceder a los logros recién desbloqueados
+  List<Achievement> get newlyUnlockedAchievements => _newlyUnlockedAchievements;
 
   int get bestStreak {
     if (_habits.isEmpty) return 0;
@@ -63,7 +77,8 @@ class AuthProvider with ChangeNotifier {
     try {
       final userData = await _apiService.login(email, password);
       _user = User.fromJson(userData);
-      // La navegación la maneja el AuthWrapper, ahora solo notificamos
+      // Después de un login exitoso, cargamos los datos del dashboard y logros
+      await fetchDashboardData();
       _setLoading(false);
     } catch (e) {
       _setLoading(false);
@@ -87,48 +102,49 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     _user = null;
     _habits = [];
+    _newlyUnlockedAchievements = []; // Limpiamos logros al cerrar sesión
     await ApiService.deleteToken();
     notifyListeners();
   }
 
   // ===================================================================
-  // MÉTODOS AÑADIDOS PARA MANEJAR HÁBITOS
+  // MÉTODOS PARA MANEJAR HÁBITOS
   // ===================================================================
 
-  /// Llama al ApiService para crear un nuevo hábito y luego refresca la lista.
   Future<void> createHabit(Map<String, dynamic> habitData) async {
     _setLoading(true);
     try {
       await _apiService.createHabit(habitData);
-      // Después de crear, volvemos a pedir los datos del dashboard para tener la lista actualizada.
       await fetchDashboardData();
     } catch (e) {
-      rethrow; // Propagamos el error para que el UI lo muestre.
+      rethrow;
     } finally {
       _setLoading(false);
     }
   }
 
-  /// Llama al ApiService para registrar el progreso y luego refresca los datos de los hábitos.
   Future<void> logHabitProgress(Map<String, dynamic> logData) async {
-    // No activamos el loading global para que la UI se sienta más fluida.
-    // El botón individual puede mostrar su propio estado de carga si es necesario.
     try {
       await _apiService.logHabitProgress(logData);
-      // Hacemos una recarga silenciosa de los datos para actualizar las rachas.
       await fetchDashboardData();
     } catch (e) {
-      rethrow; // Propagamos el error para que el UI lo muestre.
+      rethrow;
     }
   }
+
   // ===================================================================
 
-  /// Obtiene los datos del dashboard (hábitos y estadísticas) y los guarda en el provider.
+  /// Obtiene los datos del dashboard y verifica los logros.
   Future<void> fetchDashboardData() async {
     try {
       final data = await _apiService.getDashboardData();
       final habitsData = data['habits_con_estadisticas'] as List;
       _habits = habitsData.map((json) => Habit.fromJson(json)).toList();
+
+      // --- AÑADIDO ---
+      // Verificamos si se ha desbloqueado algún logro con los datos actualizados.
+      _newlyUnlockedAchievements = await _achievementService
+          .checkAndUnlockAchievements(_habits);
     } catch (e) {
       debugPrint("Fallo al obtener datos del dashboard: $e");
       if (e.toString().contains('Sesión expirada')) {
@@ -136,9 +152,15 @@ class AuthProvider with ChangeNotifier {
       }
       rethrow;
     } finally {
-      // Notificamos al UI que los datos (o la falta de ellos) han sido actualizados.
       notifyListeners();
     }
+  }
+
+  // --- AÑADIDO ---
+  /// Método para que la UI informe al provider que ya ha mostrado las notificaciones de nuevos logros.
+  void clearNewAchievements() {
+    _newlyUnlockedAchievements = [];
+    // No es necesario notificar a los listeners aquí, ya que esto es una limpieza silenciosa.
   }
 
   /// Helper para gestionar el estado de carga y notificar a los listeners.

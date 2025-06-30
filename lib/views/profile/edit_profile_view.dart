@@ -1,7 +1,12 @@
+/*
+================================================================================
+ ARCHIVO: lib/views/profile/edit_profile_view.dart (Versión Actualizada)
+================================================================================
+*/
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../models/user_model.dart'; // Asegúrate de importar tu modelo
+import '../../models/user_model.dart';
 
 class EditProfileView extends StatefulWidget {
   const EditProfileView({super.key});
@@ -17,11 +22,7 @@ class _EditProfileViewState extends State<EditProfileView> {
   @override
   void initState() {
     super.initState();
-    // Usamos listen:false en initState
     final User? user = Provider.of<AuthProvider>(context, listen: false).user;
-
-    // --- CORRECCIÓN ---
-    // Asignamos el valor del usuario o un string vacío si es nulo.
     _nameController.text = user?.name ?? '';
     _emailController.text = user?.email ?? '';
   }
@@ -35,8 +36,18 @@ class _EditProfileViewState extends State<EditProfileView> {
 
   @override
   Widget build(BuildContext context) {
+    // --- CAMBIO ---
+    // Ahora es un Scaffold completo, no una vista transparente.
     return Scaffold(
-      backgroundColor: Colors.transparent, // Fondo transparente
+      // Usamos el color de fondo del tema
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      // --- AÑADIDO ---
+      // Una AppBar con título y botón para volver atrás automáticamente.
+      appBar: AppBar(
+        title: const Text("Editar Información"),
+        backgroundColor: const Color(0xFF1B1D2A),
+        elevation: 0,
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: Container(
@@ -45,14 +56,6 @@ class _EditProfileViewState extends State<EditProfileView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Editar Información",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
                 const SizedBox(height: 24),
                 TextFormField(
                   controller: _nameController,
@@ -71,6 +74,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () {
+                    // TODO: Implementar lógica para guardar cambios
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text("Función aún no implementada."),
@@ -78,7 +82,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6366F1),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     minimumSize: const Size.fromHeight(50),
                     shape: RoundedRectangleBorder(
