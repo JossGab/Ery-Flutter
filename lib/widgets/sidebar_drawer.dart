@@ -6,8 +6,13 @@ import '../providers/auth_provider.dart';
 
 class SidebarDrawer extends StatelessWidget {
   final SidebarXController controller;
+  final void Function(int index)? onItemSelected;
 
-  const SidebarDrawer({super.key, required this.controller});
+  const SidebarDrawer({
+    super.key,
+    required this.controller,
+    this.onItemSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -72,25 +77,39 @@ class SidebarDrawer extends StatelessWidget {
                       ],
                     ),
                   ),
-              // ===================================================================
-              // SECCIÓN DE ITEMS ACTUALIZADA
-              // Se ha añadido "Mis Logros"
-              // ===================================================================
-              items: const [
+              items: [
                 SidebarXItem(
                   icon: Icons.dashboard_rounded,
                   label: 'Mi Dashboard',
+                  onTap: () {
+                    onItemSelected?.call(0);
+                    Navigator.of(context).pop(); // ✅ Oculta el Drawer
+                  },
                 ),
                 SidebarXItem(
                   icon: Icons.edit_note_rounded,
                   label: 'Mis Hábitos',
+                  onTap: () {
+                    onItemSelected?.call(1);
+                    Navigator.of(context).pop();
+                  },
                 ),
-                // --- AÑADIDO ---
                 SidebarXItem(
                   icon: Icons.emoji_events_rounded,
                   label: 'Mis Logros',
+                  onTap: () {
+                    onItemSelected?.call(2);
+                    Navigator.of(context).pop();
+                  },
                 ),
-                SidebarXItem(icon: Icons.person_rounded, label: 'Mi Perfil'),
+                SidebarXItem(
+                  icon: Icons.person_rounded,
+                  label: 'Mi Perfil',
+                  onTap: () {
+                    onItemSelected?.call(3);
+                    Navigator.of(context).pop();
+                  },
+                ),
               ],
               footerBuilder:
                   (context, extended) => Column(
@@ -163,7 +182,6 @@ class SidebarDrawer extends StatelessWidget {
 
                           if (confirm == true && context.mounted) {
                             await context.read<AuthProvider>().logout();
-                            // Usamos pushAndRemoveUntil para limpiar la pila de navegación
                             Navigator.of(context).pushNamedAndRemoveUntil(
                               '/login',
                               (route) => false,

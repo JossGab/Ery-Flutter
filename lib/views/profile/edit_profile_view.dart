@@ -3,8 +3,10 @@
  ARCHIVO: lib/views/profile/edit_profile_view.dart (Versión Actualizada)
 ================================================================================
 */
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/auth_provider.dart';
 import '../../models/user_model.dart';
 
@@ -36,65 +38,67 @@ class _EditProfileViewState extends State<EditProfileView> {
 
   @override
   Widget build(BuildContext context) {
-    // --- CAMBIO ---
-    // Ahora es un Scaffold completo, no una vista transparente.
     return Scaffold(
-      // Usamos el color de fondo del tema
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      // --- AÑADIDO ---
-      // Una AppBar con título y botón para volver atrás automáticamente.
+      backgroundColor: const Color(0xFF0E0F1A),
       appBar: AppBar(
-        title: const Text("Editar Información"),
-        backgroundColor: const Color(0xFF1B1D2A),
+        title: const Text("Editar Perfil"),
+        backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: Center(
-        child: SingleChildScrollView(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 600),
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: _buildInputDecoration("Nombre completo"),
-                  style: const TextStyle(color: Colors.white),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _emailController,
-                  enabled: false,
-                  decoration: _buildInputDecoration(
-                    "Correo Electrónico (no editable)",
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 500),
+              padding: const EdgeInsets.all(24),
+              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: _buildInputDecoration("Nombre completo"),
+                    style: const TextStyle(color: Colors.white),
                   ),
-                  style: const TextStyle(color: Colors.white60),
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () {
-                    // TODO: Implementar lógica para guardar cambios
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Función aún no implementada."),
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: _emailController,
+                    enabled: false,
+                    decoration: _buildInputDecoration("Correo electrónico"),
+                    style: const TextStyle(color: Colors.white60),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: FilledButton.icon(
+                      icon: const Icon(Icons.save_outlined),
+                      label: const Text("Guardar Cambios"),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Función aún no implementada."),
+                            backgroundColor: Colors.orangeAccent,
+                          ),
+                        );
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size.fromHeight(50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    "Guardar Cambios",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

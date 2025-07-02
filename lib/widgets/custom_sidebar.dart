@@ -1,89 +1,136 @@
 // lib/widgets/custom_sidebar.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class CustomSidebar extends StatelessWidget {
   final Function(int) onItemSelected;
+  final String userName;
+  final String userRole;
 
-  const CustomSidebar({super.key, required this.onItemSelected});
+  const CustomSidebar({
+    super.key,
+    required this.onItemSelected,
+    this.userName = "Joseph Tiznado",
+    this.userRole = "Usuario",
+  });
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: const Color(0xFF1B1D2A),
-      child: SafeArea(
-        child: Column(
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: ListTile(
-                leading: CircleAvatar(backgroundColor: Colors.white),
-                title: Text("Meng To", style: TextStyle(color: Colors.white)),
-                subtitle: Text(
-                  "UI Designer",
-                  style: TextStyle(color: Colors.white54),
-                ),
-                trailing: Icon(Icons.close, color: Colors.white),
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.4),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(16),
+                bottomRight: Radius.circular(16),
               ),
             ),
-            const Divider(color: Colors.white24),
-            _buildSectionTitle("MENU"),
-            _buildItem(Icons.home, "Home", 0),
-            _buildItem(Icons.dashboard, "Browse", 1, badge: 12),
-            _buildItem(Icons.topic, "Topics", 2),
-            _buildItem(Icons.search, "Search", 3),
-            _buildItem(Icons.payment, "Billing", 4),
-            _buildItem(Icons.help, "Help", 5),
-            const Divider(color: Colors.white24),
-            _buildSectionTitle("HISTORY"),
-            _buildItem(Icons.download, "Downloads", 6),
-            _buildItem(Icons.favorite, "Favorites", 7),
-            const Spacer(),
-            SwitchListTile(
-              value: true,
-              onChanged: (_) {},
-              title: const Text(
-                "Dark Mode",
-                style: TextStyle(color: Colors.white),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      children: [
+                        const CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.white24,
+                          child: Icon(Icons.person, color: Colors.white),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              userName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              userRole,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Divider(color: Colors.white12, thickness: 0.5),
+                  const SizedBox(height: 12),
+
+                  // Menu Items
+                  _buildMenuItem(
+                    context,
+                    icon: Icons.dashboard_customize_rounded,
+                    label: "Mi Dashboard",
+                    index: 0,
+                  ),
+                  _buildMenuItem(
+                    context,
+                    icon: Icons.track_changes_rounded,
+                    label: "Mis Hábitos",
+                    index: 1,
+                  ),
+                  _buildMenuItem(
+                    context,
+                    icon: Icons.emoji_events_outlined,
+                    label: "Mis Logros",
+                    index: 2,
+                  ),
+                  _buildMenuItem(
+                    context,
+                    icon: Icons.person_outline,
+                    label: "Mi Perfil",
+                    index: 3,
+                  ),
+
+                  const Spacer(),
+
+                  const Divider(color: Colors.white24, height: 1),
+
+                  // Logout button
+                  ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.white),
+                    title: const Text(
+                      "Cerrar Sesión",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onTap: () {
+                      // TODO: Aquí deberías cerrar sesión
+                    },
+                  ),
+                ],
               ),
-              secondary: const Icon(Icons.dark_mode, color: Colors.white),
             ),
-            ListTile(
-              leading: const Icon(Icons.settings, color: Colors.white),
-              title: const Text(
-                "Settings",
-                style: TextStyle(color: Colors.white),
-              ),
-              onTap: () {},
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Text(title, style: const TextStyle(color: Colors.white54)),
-    );
-  }
-
-  Widget _buildItem(IconData icon, String label, int index, {int? badge}) {
+  Widget _buildMenuItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required int index,
+  }) {
     return ListTile(
       leading: Icon(icon, color: Colors.white),
       title: Text(label, style: const TextStyle(color: Colors.white)),
-      trailing:
-          badge != null
-              ? CircleAvatar(
-                backgroundColor: Colors.red,
-                radius: 10,
-                child: Text(
-                  '$badge',
-                  style: const TextStyle(fontSize: 12, color: Colors.white),
-                ),
-              )
-              : null,
-      onTap: () => onItemSelected(index),
+      onTap: () {
+        Navigator.of(context).pop(); // Oculta el sidebar
+        onItemSelected(index);
+      },
     );
   }
 }

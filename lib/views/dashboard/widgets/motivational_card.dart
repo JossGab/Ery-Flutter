@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class MotivationalCard extends StatefulWidget {
@@ -8,8 +9,8 @@ class MotivationalCard extends StatefulWidget {
   State<MotivationalCard> createState() => _MotivationalCardState();
 }
 
-class _MotivationalCardState extends State<MotivationalCard> {
-  // Lista de 20 frases motivadoras
+class _MotivationalCardState extends State<MotivationalCard>
+    with SingleTickerProviderStateMixin {
   static const List<String> _quotes = [
     "La disciplina es el puente entre las metas y los logros.",
     "El secreto del éxito es la constancia en el propósito.",
@@ -38,39 +39,63 @@ class _MotivationalCardState extends State<MotivationalCard> {
   @override
   void initState() {
     super.initState();
-    // Al iniciar el widget, seleccionamos una frase al azar
     _displayQuote = _quotes[Random().nextInt(_quotes.length)];
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF6366F1).withOpacity(0.15),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.format_quote_rounded,
-            color: Color(0xFF818CF8),
-            size: 28,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            _displayQuote,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontStyle: FontStyle.italic,
-              height: 1.5, // Espacio entre líneas para mejor lectura
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6366F1).withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(10),
+                child: const Icon(
+                  Icons.format_quote_rounded,
+                  color: Color(0xFF818CF8),
+                  size: 26,
+                ),
+              ),
+              const SizedBox(height: 16),
+              AnimatedOpacity(
+                opacity: 1.0,
+                duration: const Duration(milliseconds: 700),
+                child: Text(
+                  _displayQuote,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w400,
+                    height: 1.6,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

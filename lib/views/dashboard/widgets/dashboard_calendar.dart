@@ -8,11 +8,8 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'dart:developer' as developer;
-
-// Ajusta la ruta de importación según tu estructura
 import '../../../services/api_service.dart';
 
-// (El modelo DailyActivity no cambia)
 class DailyActivity {
   final int completions;
   final bool hasRelapse;
@@ -35,7 +32,6 @@ class DashboardCalendar extends StatefulWidget {
 }
 
 class _DashboardCalendarState extends State<DashboardCalendar> {
-  // Se mantiene el mismo estado del widget
   late final ValueNotifier<List<DailyActivity>> _selectedEvents;
   Map<DateTime, DailyActivity> _activityData = {};
   DateTime _focusedDay = DateTime.now();
@@ -44,7 +40,6 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
   String? _error;
   CalendarFormat _calendarFormat = CalendarFormat.month;
 
-  // Instancia del ApiService
   final ApiService _apiService = ApiService();
 
   @override
@@ -61,7 +56,6 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
     super.dispose();
   }
 
-  // --- LÓGICA DE CONEXIÓN AHORA USANDO ApiService ---
   Future<void> _fetchActivityData(int year, int month) async {
     if (!mounted) return;
     setState(() {
@@ -70,32 +64,24 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
     });
 
     try {
-      // Llamamos al método centralizado de nuestro servicio
-      final Map<String, dynamic> data = await _apiService.getActivityLog(
-        year,
-        month,
-      );
+      final data = await _apiService.getActivityLog(year, month);
 
-      final Map<DateTime, DailyActivity> fetchedActivities = {};
-      data.forEach((dateString, activityJson) {
-        final date = DateTime.parse(dateString);
-        fetchedActivities[date] = DailyActivity.fromJson(activityJson);
+      final Map<DateTime, DailyActivity> fetched = {};
+      data.forEach((key, value) {
+        final date = DateTime.parse(key);
+        fetched[date] = DailyActivity.fromJson(value);
       });
 
       if (mounted) {
         setState(() {
-          _activityData = fetchedActivities;
+          _activityData = fetched;
         });
       }
     } catch (e) {
-      developer.log(
-        'Error capturado por el widget del calendario',
-        name: 'EryApp.CalendarWidget',
-        error: e,
-      );
+      developer.log('Error en Calendar', name: 'EryApp.Calendar', error: e);
       if (mounted) {
         setState(() {
-          _error = e.toString().replaceFirst('Exception: ', '');
+          _error = e.toString().replaceFirst("Exception: ", "");
         });
       }
     } finally {
@@ -107,11 +93,9 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
     }
   }
 
-  // (El resto del widget no tiene cambios, se mantiene igual que antes)
-
   List<DailyActivity> _getEventsForDay(DateTime day) {
-    final activity = _activityData[DateTime(day.year, day.month, day.day)];
-    return activity != null ? [activity] : [];
+    final act = _activityData[DateTime(day.year, day.month, day.day)];
+    return act != null ? [act] : [];
   }
 
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
@@ -129,50 +113,49 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1f2937),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1B1D2A), Color(0xFF111827)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          _buildHeader(),
+          const Text(
+            '📆 Calendario de Actividad',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
           if (_isLoading)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 40),
               child: Center(child: CircularProgressIndicator()),
             )
           else if (_error != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Center(
-                child: Text(
-                  'Error: $_error',
-                  style: const TextStyle(color: Colors.red, fontSize: 12),
-                  textAlign: TextAlign.center,
-                ),
+            Center(
+              child: Text(
+                'Error: $_error',
+                style: const TextStyle(color: Colors.red, fontSize: 14),
+                textAlign: TextAlign.center,
               ),
             )
           else
             _buildCalendar(),
         ],
       ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return const Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Text(
-            'Calendario de Actividad',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -186,11 +169,7 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
       onDaySelected: _onDaySelected,
       calendarFormat: _calendarFormat,
       onFormatChanged: (format) {
-        if (_calendarFormat != format) {
-          setState(() {
-            _calendarFormat = format;
-          });
-        }
+        setState(() => _calendarFormat = format);
       },
       onPageChanged: (focusedDay) {
         _focusedDay = focusedDay;
@@ -204,7 +183,7 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
           shape: BoxShape.circle,
         ),
         selectedDecoration: BoxDecoration(
-          color: Color(0xFF4f46e5),
+          color: Color(0xFF6366F1),
           shape: BoxShape.circle,
         ),
         defaultTextStyle: TextStyle(color: Colors.white),
@@ -220,9 +199,9 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
         markerBuilder: (context, date, events) {
           if (events.isNotEmpty && events.first.hasRelapse) {
             return Positioned(
-              right: 1,
-              bottom: 1,
-              child: _buildMarker(Colors.red),
+              right: 4,
+              bottom: 4,
+              child: _buildMarker(Colors.redAccent),
             );
           }
           return null;
@@ -231,14 +210,21 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
           final activity =
               _activityData[DateTime(day.year, day.month, day.day)];
           if (activity != null && activity.completions > 0) {
-            Color bgColor = _getHeatmapColor(activity.completions);
+            final color = _getHeatmapColor(activity.completions);
             return Center(
               child: Container(
-                width: 36,
-                height: 36,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: bgColor,
+                  color: color,
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.6),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Center(
                   child: Text(
@@ -257,8 +243,8 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
 
   Widget _buildMarker(Color color) {
     return Container(
-      width: 8,
-      height: 8,
+      width: 10,
+      height: 10,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }

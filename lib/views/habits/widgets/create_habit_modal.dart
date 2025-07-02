@@ -4,6 +4,7 @@
  INSTRUCCIONES: Se reemplaza AnimatedVisibility por un `if` para máxima compatibilidad.
 ================================================================================
 */
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -77,150 +78,170 @@ class _CreateHabitModalState extends State<CreateHabitModal> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          20,
-          20,
-          MediaQuery.of(context).viewInsets.bottom + 20,
-        ),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Text(
-                  'Crear Nuevo Hábito',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.06),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                MediaQuery.of(context).viewInsets.bottom + 20,
               ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _nameController,
-                decoration: _buildInputDecoration(
-                  label: 'Nombre del Hábito',
-                  icon: Icons.flag_outlined,
-                ),
-                validator:
-                    (v) =>
-                        v == null || v.trim().isEmpty
-                            ? 'El nombre es obligatorio'
-                            : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: _buildInputDecoration(
-                  label: 'Descripción (Opcional)',
-                  icon: Icons.edit_note_outlined,
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Elige el tipo de hábito',
-                style: TextStyle(color: Colors.white70, fontSize: 16),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _HabitTypeCard(
-                    title: 'Sí / No',
-                    icon: Icons.check_circle_outline,
-                    isSelected: _selectedType == 'SI_NO',
-                    onTap: () => setState(() => _selectedType = 'SI_NO'),
-                  ),
-                  _HabitTypeCard(
-                    title: 'Numérico',
-                    icon: Icons.straighten_outlined,
-                    isSelected: _selectedType == 'MEDIBLE_NUMERICO',
-                    onTap:
-                        () =>
-                            setState(() => _selectedType = 'MEDIBLE_NUMERICO'),
-                  ),
-                  _HabitTypeCard(
-                    title: 'Mal Hábito',
-                    icon: Icons.shield_outlined,
-                    isSelected: _selectedType == 'MAL_HABITO',
-                    onTap: () => setState(() => _selectedType = 'MAL_HABITO'),
-                  ),
-                ],
-              ),
-
-              // ==========================================================
-              // --- CAMBIO CLAVE: Reemplazo de AnimatedVisibility ---
-              // Usamos un 'if' simple para añadir el widget condicionalmente.
-              // Logra el mismo efecto visual pero es 100% a prueba de errores del analizador.
-              // ==========================================================
-              if (_selectedType == 'MEDIBLE_NUMERICO')
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0),
-                  child: TextFormField(
-                    controller: _goalController,
-                    decoration: _buildInputDecoration(
-                      label: 'Meta Numérica (ej: 500)',
-                      icon: Icons.numbers_outlined,
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    validator: (v) {
-                      if (_selectedType == 'MEDIBLE_NUMERICO' &&
-                          (v == null || v.isEmpty)) {
-                        return 'La meta es obligatoria';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-
-              const SizedBox(height: 32),
-              SizedBox(
-                height: 50,
-                child:
-                    _isSaving
-                        ? const Center(child: CircularProgressIndicator())
-                        : FilledButton.icon(
-                          onPressed: _submitForm,
-                          icon: const Icon(Icons.add_task_rounded),
-                          label: const Text(
-                            'Crear Hábito',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                          style: FilledButton.styleFrom(
-                            backgroundColor:
-                                Theme.of(context).colorScheme.primary,
-                          ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Text(
+                        'Crear Nuevo Hábito',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildTextField(
+                      controller: _nameController,
+                      label: 'Nombre del Hábito',
+                      icon: Icons.flag_outlined,
+                      validator:
+                          (v) =>
+                              (v == null || v.trim().isEmpty)
+                                  ? 'El nombre es obligatorio'
+                                  : null,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _descriptionController,
+                      label: 'Descripción (Opcional)',
+                      icon: Icons.edit_note_outlined,
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Elige el tipo de hábito',
+                      style: TextStyle(color: Colors.white70, fontSize: 16),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _HabitTypeCard(
+                          title: 'Sí / No',
+                          icon: Icons.check_circle_outline,
+                          isSelected: _selectedType == 'SI_NO',
+                          onTap: () => setState(() => _selectedType = 'SI_NO'),
+                        ),
+                        _HabitTypeCard(
+                          title: 'Numérico',
+                          icon: Icons.straighten_outlined,
+                          isSelected: _selectedType == 'MEDIBLE_NUMERICO',
+                          onTap:
+                              () => setState(
+                                () => _selectedType = 'MEDIBLE_NUMERICO',
+                              ),
+                        ),
+                        _HabitTypeCard(
+                          title: 'Mal Hábito',
+                          icon: Icons.shield_outlined,
+                          isSelected: _selectedType == 'MAL_HABITO',
+                          onTap:
+                              () =>
+                                  setState(() => _selectedType = 'MAL_HABITO'),
+                        ),
+                      ],
+                    ),
+                    if (_selectedType == 'MEDIBLE_NUMERICO')
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: _buildTextField(
+                          controller: _goalController,
+                          label: 'Meta Numérica (ej: 500)',
+                          icon: Icons.numbers_outlined,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          validator: (v) {
+                            if (_selectedType == 'MEDIBLE_NUMERICO' &&
+                                (v == null || v.isEmpty)) {
+                              return 'La meta es obligatoria';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      height: 50,
+                      child:
+                          _isSaving
+                              ? const Center(child: CircularProgressIndicator())
+                              : ElevatedButton.icon(
+                                onPressed: _submitForm,
+                                icon: const Icon(Icons.add_task_rounded),
+                                label: const Text(
+                                  'Crear Hábito',
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.primary,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                              ),
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  InputDecoration _buildInputDecoration({
+  Widget _buildTextField({
+    required TextEditingController controller,
     required String label,
     required IconData icon,
+    int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
   }) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: Colors.white54),
-      labelStyle: const TextStyle(color: Colors.white70),
-      filled: true,
-      fillColor: Colors.white.withOpacity(0.05),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.white24),
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      validator: validator,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: Colors.white60),
+        labelStyle: const TextStyle(color: Colors.white70),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.04),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Colors.white24),
+        ),
       ),
     );
   }
@@ -241,8 +262,8 @@ class _HabitTypeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isSelected ? Theme.of(context).colorScheme.primary : Colors.white24;
+    final primary = Theme.of(context).colorScheme.primary;
+
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -253,19 +274,39 @@ class _HabitTypeCard extends StatelessWidget {
           decoration: BoxDecoration(
             color:
                 isSelected
-                    ? color.withOpacity(0.2)
-                    : Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color, width: isSelected ? 2 : 1),
+                    ? primary.withOpacity(0.2)
+                    : Colors.white.withOpacity(0.03),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? primary : Colors.white30,
+              width: isSelected ? 2 : 1,
+            ),
+            boxShadow:
+                isSelected
+                    ? [
+                      BoxShadow(
+                        color: primary.withOpacity(0.4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                    : [],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: isSelected ? color : Colors.white70, size: 32),
-              const SizedBox(height: 8),
+              Icon(
+                icon,
+                color: isSelected ? primary : Colors.white70,
+                size: 30,
+              ),
+              const SizedBox(height: 6),
               Text(
                 title,
-                style: TextStyle(color: isSelected ? color : Colors.white70),
+                style: TextStyle(
+                  color: isSelected ? primary : Colors.white70,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),

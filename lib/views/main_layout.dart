@@ -7,28 +7,21 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:sidebarx/sidebarx.dart';
 
-// Vistas que vamos a utilizar
+// Vistas
 import '../widgets/sidebar_drawer.dart';
 import 'dashboard/dashboard_view.dart';
 import 'habits/habits_view.dart';
-import 'achievements/achievements_view.dart'; // <-- Importamos la nueva vista
+import 'achievements/achievements_view.dart';
 import 'profile/profile_view.dart';
 
-// ===================================================================
-// MEJORA CLAVE: Creamos una clase para agrupar cada sección.
-// Ahora, cada elemento de navegación tiene su título y su vista en un solo lugar.
-// Se acabaron los desajustes de índices.
-// ===================================================================
 class _NavigationItem {
   final String title;
   final Widget view;
-
   const _NavigationItem({required this.title, required this.view});
 }
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
-
   @override
   State<MainLayout> createState() => _MainLayoutState();
 }
@@ -37,19 +30,10 @@ class _MainLayoutState extends State<MainLayout> {
   final _controller = SidebarXController(selectedIndex: 0, extended: true);
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // ===================================================================
-  // ¡LA SOLUCIÓN!
-  // Creamos una única lista que contiene toda la información de navegación.
-  // El orden aquí DEBE COINCIDIR con el orden de los `SidebarXItem`
-  // en `sidebar_drawer.dart`.
-  // ===================================================================
   final List<_NavigationItem> _navigationItems = const [
     _NavigationItem(title: 'Mi Dashboard', view: DashboardView()),
     _NavigationItem(title: 'Mis Hábitos', view: HabitsView()),
-    _NavigationItem(
-      title: 'Mis Logros',
-      view: AchievementsView(),
-    ), // <-- Añadido aquí
+    _NavigationItem(title: 'Mis Logros', view: AchievementsView()),
     _NavigationItem(title: 'Mi Perfil', view: ProfileView()),
   ];
 
@@ -67,7 +51,18 @@ class _MainLayoutState extends State<MainLayout> {
     super.dispose();
   }
 
-  // El diálogo de salida no necesita cambios
+  /// Diálogo de confirmación si el usuario está en la pestaña principal
+  Future<bool> _handleBackPress() async {
+    if (_controller.selectedIndex == 0) {
+      // Si ya estás en Dashboard, mostrar diálogo de salir
+      return await _showExitConfirmationDialog();
+    } else {
+      // Si estás en otra pestaña, volver al Dashboard
+      _controller.selectIndex(0);
+      return false;
+    }
+  }
+
   Future<bool> _showExitConfirmationDialog() async {
     return await showDialog<bool>(
           context: context,
@@ -87,7 +82,7 @@ class _MainLayoutState extends State<MainLayout> {
                     '¿Estás seguro de que quieres cerrar Ery?',
                     style: TextStyle(color: Colors.white70),
                   ),
-                  actions: <Widget>[
+                  actions: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(false),
                       child: const Text(
@@ -112,12 +107,11 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 700;
-
-    // Obtenemos el item de navegación actual de forma segura
     final currentItem = _navigationItems[_controller.selectedIndex];
 
     return WillPopScope(
-      onWillPop: _showExitConfirmationDialog,
+      onWillPop:
+          _handleBackPress, // <- Aquí controlamos la navegación hacia atrás
       child: Scaffold(
         key: _scaffoldKey,
         appBar:
@@ -125,7 +119,6 @@ class _MainLayoutState extends State<MainLayout> {
                 ? AppBar(
                   backgroundColor: const Color(0xFF1B1D2A),
                   elevation: 0,
-                  // Ahora el título se obtiene de nuestra nueva estructura
                   title: Text(
                     currentItem.title,
                     style: const TextStyle(
@@ -143,7 +136,6 @@ class _MainLayoutState extends State<MainLayout> {
         body: Row(
           children: [
             if (!isMobile) SidebarDrawer(controller: _controller),
-            // Y la vista también se obtiene de la misma estructura
             Expanded(child: currentItem.view),
           ],
         ),

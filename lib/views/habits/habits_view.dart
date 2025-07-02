@@ -20,17 +20,15 @@ class HabitsView extends StatelessWidget {
     final authProvider = context.watch<AuthProvider>();
     final habits = authProvider.habits;
 
-    // Lógica para separar los hábitos por tipo
     final goodHabits = habits.where((h) => h.tipo != 'MAL_HABITO').toList();
     final badHabits = habits.where((h) => h.tipo == 'MAL_HABITO').toList();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      // Usamos un FloatingActionButton para "Crear Hábito", un patrón más estándar
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateHabitModal(context),
         label: const Text('Nuevo Hábito'),
-        icon: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: RefreshIndicator(
@@ -41,133 +39,128 @@ class HabitsView extends StatelessWidget {
                 : habits.isEmpty
                 ? _buildEmptyState(context)
                 : CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
                   slivers: [
-                    // Usamos un SliverAppBar para un efecto de encogimiento más elegante
-                    const SliverAppBar(
-                      title: Text('Mis Hábitos'),
-                      backgroundColor: Colors.transparent,
-                      pinned: true,
-                      centerTitle: false,
+                    _buildHabitListSection(
+                      context,
+                      goodHabits,
+                      "Hábitos Positivos",
+                      Icons.trending_up,
+                      Colors.green,
                     ),
-                    // Mostramos la lista de hábitos con las secciones
-                    _buildHabitList(context, goodHabits, badHabits),
+                    _buildHabitListSection(
+                      context,
+                      badHabits,
+                      "Rompiendo Cadenas",
+                      Icons.warning_amber_rounded,
+                      Colors.orange,
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 100)),
                   ],
                 ),
       ),
     );
   }
 
-  // Widget principal que construye la lista de hábitos por secciones
-  Widget _buildHabitList(
+  Widget _buildHabitListSection(
     BuildContext context,
-    List<Habit> goodHabits,
-    List<Habit> badHabits,
+    List<Habit> habits,
+    String title,
+    IconData icon,
+    Color iconColor,
   ) {
+    if (habits.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
     return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(
-        16,
-        0,
-        16,
-        80,
-      ), // Padding para no chocar con el FAB
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       sliver: SliverList(
         delegate: SliverChildListDelegate([
-          // Sección de Buenos Hábitos
-          if (goodHabits.isNotEmpty) ...[
-            _buildSectionHeader(
-              "Hábitos Positivos",
-              Icons.trending_up,
-              Colors.green,
-            ),
-            ...goodHabits.map(
-              (habit) => Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: AspectRatio(
-                  aspectRatio: 16 / 10, // Proporción para la tarjeta
-                  child: HabitCard(habit: habit),
+          _buildSectionHeader(title, icon, iconColor),
+          const SizedBox(height: 8),
+          ...habits.map(
+            (habit) => Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF25273A),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-          ],
-
-          // Sección de Malos Hábitos
-          if (badHabits.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _buildSectionHeader(
-              "Rompiendo Cadenas",
-              Icons.shield,
-              Colors.orange,
-            ),
-            ...badHabits.map(
-              (habit) => Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
                 child: AspectRatio(
                   aspectRatio: 16 / 10,
                   child: HabitCard(habit: habit),
                 ),
               ),
             ),
-          ],
+          ),
         ]),
       ),
     );
   }
 
-  // Widget para los encabezados de cada sección
-  Widget _buildSectionHeader(String title, IconData icon, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0, top: 8.0),
-      child: Row(
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+  Widget _buildSectionHeader(String title, IconData icon, Color iconColor) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(icon, color: iconColor, size: 22),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  // El estado vacío no necesita cambios
   Widget _buildEmptyState(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.emoji_flags_outlined,
-            size: 60,
-            color: Colors.white38,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            '¡Es hora de empezar un nuevo reto!',
-            style: TextStyle(fontSize: 18, color: Colors.white70),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Crea tu primer hábito usando el botón "+".',
-            style: TextStyle(color: Colors.white38),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.flag_circle_outlined, size: 80, color: Colors.white24),
+            const SizedBox(height: 20),
+            const Text(
+              '¡Es hora de empezar tu nueva rutina!',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white70,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Presiona el botón "+" para crear tu primer hábito y comenzar a construir tu mejor versión.',
+              style: TextStyle(fontSize: 16, color: Colors.white38),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // El modal tampoco necesita cambios
   void _showCreateHabitModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF1B1D2A),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) {
         return ChangeNotifierProvider.value(
