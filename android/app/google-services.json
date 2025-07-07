@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "902861436356",
+    "project_id": "ery-app-91404",
+    "storage_bucket": "ery-app-91404.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:902861436356:android:fc2d27bcf43253dc7fe091",
+        "android_client_info": {
+          "package_name": "com.example.ery_flutter_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "902861436356-jiagrmkcf3m4i1u2f2g0mhr8i71u2crj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ery_flutter_app",
+            "certificate_hash": "7a4fd7172ae01b4e56495e95db24bc8e83f21bf5"
+          }
+        },
+        {
+          "client_id": "902861436356-e8ukugck19vr14qa1usk7p22hdgu91d5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYuCjmEEVqwdtIv0A9aRzKVn366gUYJqo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "902861436356-e8ukugck19vr14qa1usk7p22hdgu91d5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

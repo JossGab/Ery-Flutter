@@ -38,7 +38,6 @@ dependencies:
   jwt_decoder: ^2.0.1
 
   cupertino_icons: ^1.0.8
-  google_sign_in: ^6.1.4
   dio: ^5.4.3+1
   cookie_jar: ^4.0.6
   dio_cookie_manager: ^3.1.0
@@ -48,6 +47,10 @@ dependencies:
 
   sidebarx: ^0.17.1
   shared_preferences: ^2.2.3
+
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.16.0
+  google_sign_in: ^6.1.4 
 
 dev_dependencies:
   flutter_test:

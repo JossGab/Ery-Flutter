@@ -13,6 +13,10 @@ import 'dashboard/dashboard_view.dart';
 import 'habits/habits_view.dart';
 import 'achievements/achievements_view.dart';
 import 'profile/profile_view.dart';
+import 'routines/routines_view.dart';
+import 'rankings/rankings_view.dart';
+import 'friends/friends_view.dart';
+import 'competitions/competitions_view.dart';
 
 class _NavigationItem {
   final String title;
@@ -33,7 +37,11 @@ class _MainLayoutState extends State<MainLayout> {
   final List<_NavigationItem> _navigationItems = const [
     _NavigationItem(title: 'Mi Dashboard', view: DashboardView()),
     _NavigationItem(title: 'Mis Hábitos', view: HabitsView()),
+    _NavigationItem(title: 'Mis Rutinas', view: RoutinesView()),
     _NavigationItem(title: 'Mis Logros', view: AchievementsView()),
+    _NavigationItem(title: 'Rankings', view: RankingsView()),
+    _NavigationItem(title: 'Comunidad', view: FriendsView()),
+    _NavigationItem(title: 'Competiciones', view: CompetitionsView()),
     _NavigationItem(title: 'Mi Perfil', view: ProfileView()),
   ];
 

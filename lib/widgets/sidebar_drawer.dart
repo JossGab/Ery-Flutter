@@ -95,10 +95,42 @@ class SidebarDrawer extends StatelessWidget {
                   },
                 ),
                 SidebarXItem(
+                  icon: Icons.all_inclusive_rounded,
+                  label: 'Mis Rutinas',
+                  onTap: () {
+                    onItemSelected?.call(2);
+                    Navigator.of(context).pop();
+                  },
+                ),
+                SidebarXItem(
                   icon: Icons.emoji_events_rounded,
                   label: 'Mis Logros',
                   onTap: () {
-                    onItemSelected?.call(2);
+                    onItemSelected?.call(3);
+                    Navigator.of(context).pop();
+                  },
+                ),
+                SidebarXItem(
+                  icon: Icons.leaderboard_rounded,
+                  label: 'Rankings',
+                  onTap: () {
+                    onItemSelected?.call(4);
+                    Navigator.of(context).pop();
+                  },
+                ),
+                SidebarXItem(
+                  icon: Icons.groups_rounded,
+                  label: 'Comunidad',
+                  onTap: () {
+                    onItemSelected?.call(5);
+                    Navigator.of(context).pop();
+                  },
+                ),
+                SidebarXItem(
+                  icon: Icons.emoji_events_outlined,
+                  label: 'Competiciones',
+                  onTap: () {
+                    onItemSelected?.call(6);
                     Navigator.of(context).pop();
                   },
                 ),
@@ -106,7 +138,7 @@ class SidebarDrawer extends StatelessWidget {
                   icon: Icons.person_rounded,
                   label: 'Mi Perfil',
                   onTap: () {
-                    onItemSelected?.call(3);
+                    onItemSelected?.call(7);
                     Navigator.of(context).pop();
                   },
                 ),

@@ -2,7 +2,8 @@
 ================================================================================
  ARCHIVO: lib/services/api_service.dart
  INSTRUCCIONES: Reemplaza el contenido de este archivo.
- Esta versión añade un log para verificar el token antes de cada envío.
+ Esta versión añade los métodos para Perfil, Logros y Amigos, además
+ del método para autenticación con Google.
 ================================================================================
 */
 import 'dart:convert';
@@ -78,6 +79,37 @@ class ApiService {
     }
   }
 
+  // ===================================================================
+  // MÉTODO NUEVO: Autenticación con Google
+  // ===================================================================
+  /// Inicia sesión o registra un usuario usando un ID Token de Google.
+  Future<Map<String, dynamic>> loginWithGoogle(String idToken) async {
+    // Asumimos que el endpoint en tu backend será /api/auth/google
+    // Tu compañero de backend debe crear este endpoint.
+    final url = Uri.parse('$_baseUrl/auth/google');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'idToken': idToken}),
+    );
+
+    debugPrint('Respuesta de login con Google: ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final token = data['token'];
+      final user = data['user'];
+      if (token != null && user != null) {
+        await _saveToken(token); // Guardamos el token de NUESTRO backend
+        return user;
+      } else {
+        throw Exception('Respuesta de API inválida.');
+      }
+    } else {
+      throw _handleErrorResponse(response);
+    }
+  }
+
   /// Registra un nuevo usuario.
   Future<Map<String, dynamic>> register({
     required String name,
@@ -101,105 +133,385 @@ class ApiService {
     }
   }
 
-  // --- MÉTODOS QUE REQUIEREN AUTENTICACIÓN ---
-
+  // --- MÉTODO GENÉRICO PARA PETICIONES AUTENTICADAS ---
+  // Este método simplifica todas las llamadas futuras.
   Future<T> _makeAuthenticatedRequest<T>(
-    Future<http.Response> Function(String token) request,
-  ) async {
+    String path, {
+    String method = 'GET',
+    Map<String, dynamic>? body,
+  }) async {
     final token = await getToken();
     if (token == null) {
       throw Exception('No autenticado.');
     }
 
-    // **AÑADIDO**: Log para verificar el token antes de usarlo.
-    debugPrint('Enviando petición con token: $token');
+    final url = Uri.parse('$_baseUrl$path');
+    http.Response response;
 
-    final response = await request(token);
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      // Asumimos que T es el tipo de dato decodificado del JSON
-      return json.decode(response.body) as T;
-    } else {
-      throw _handleErrorResponse(response);
+    debugPrint('Petición: $method $url');
+    if (body != null) {
+      debugPrint('Cuerpo: ${json.encode(body)}');
+    }
+
+    try {
+      switch (method.toUpperCase()) {
+        case 'POST':
+          response = await http.post(
+            url,
+            headers: headers,
+            body: json.encode(body),
+          );
+          break;
+        case 'PUT':
+          response = await http.put(
+            url,
+            headers: headers,
+            body: json.encode(body),
+          );
+          break;
+        case 'DELETE':
+          response = await http.delete(url, headers: headers);
+          break;
+        default: // GET
+          response = await http.get(url, headers: headers);
+      }
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (response.body.isEmpty) {
+          // Para respuestas como 204 No Content
+          return null as T;
+        }
+        return json.decode(utf8.decode(response.bodyBytes)) as T;
+      } else {
+        throw _handleErrorResponse(response);
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 
-  /// Obtiene los datos del dashboard del usuario autenticado.
-  Future<Map<String, dynamic>> getDashboardData() async {
-    return await _makeAuthenticatedRequest<Map<String, dynamic>>((token) {
-      final url = Uri.parse('$_baseUrl/dashboard');
-      return http.get(url, headers: {'Authorization': 'Bearer $token'});
-    });
+  // --- MÉTODOS EXISTENTES (Refactorizados para usar el método genérico) ---
+
+  Future<Map<String, dynamic>> getDashboardData() {
+    return _makeAuthenticatedRequest<Map<String, dynamic>>('/dashboard');
   }
 
-  /// Obtiene la lista de hábitos del usuario autenticado.
+  // ===================================================================
+  // MÉTODOS PARA MANEJAR HÁBITOS (Existentes y Nuevos)
+  // ===================================================================
+
+  /// Obtiene la lista de hábitos del usuario.
   Future<List<dynamic>> getHabits() async {
-    final Map<String, dynamic> data =
-        await _makeAuthenticatedRequest<Map<String, dynamic>>((token) {
-          final url = Uri.parse('$_baseUrl/habits');
-          return http.get(url, headers: {'Authorization': 'Bearer $token'});
-        });
-    return data['habits'];
+    final response = await _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/habits',
+    );
+    return response['habits'] as List<dynamic>;
   }
 
-  /// Crea un nuevo hábito para el usuario autenticado.
+  /// Crea un nuevo hábito para el usuario.
   Future<Map<String, dynamic>> createHabit(
     Map<String, dynamic> habitData,
   ) async {
-    final Map<String, dynamic> data =
-        await _makeAuthenticatedRequest<Map<String, dynamic>>((token) {
-          final url = Uri.parse('$_baseUrl/habits');
-          return http.post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: json.encode(habitData),
-          );
-        });
-    return data['habit'];
+    final response = await _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/habits',
+      method: 'POST',
+      body: habitData,
+    );
+    return response['habit'] as Map<String, dynamic>;
   }
 
-  /// Registra el progreso de un hábito para el usuario autenticado.
-  Future<void> logHabitProgress(Map<String, dynamic> logData) async {
+  /// Registra el progreso de un hábito para una fecha específica.
+  Future<void> logHabitProgress(Map<String, dynamic> logData) {
+    return _makeAuthenticatedRequest<void>(
+      '/habits/log',
+      method: 'POST',
+      body: logData,
+    );
+  }
+
+  // --- AÑADIDOS: Métodos para editar y eliminar hábitos ---
+
+  /// Actualiza los detalles de un hábito existente.
+  /// Llama a: PUT /api/habits/{habitoId}
+  Future<Map<String, dynamic>> updateHabit(
+    int habitId,
+    Map<String, dynamic> habitData,
+  ) {
+    return _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/habits/$habitId',
+      method: 'PUT',
+      body: habitData,
+    );
+  }
+
+  /// Elimina un hábito de forma permanente.
+  /// Llama a: DELETE /api/habits/{habitoId}
+  Future<void> deleteHabit(int habitId) {
+    return _makeAuthenticatedRequest<void>(
+      '/habits/$habitId',
+      method: 'DELETE',
+    );
+  }
+
+  // ===================================================================
+  // AÑADIDOS: activity, calendar
+  // ===================================================================
+  Future<Map<String, dynamic>> getActivityLog(int year, int month) {
+    return _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/activity-log?year=$year&month=$month',
+    );
+  }
+
+  // ===================================================================
+  // AÑADIDOS: Perfil, Logros, Amigos
+  // ===================================================================
+
+  // -- PERFIL --
+  Future<Map<String, dynamic>> getProfile() {
+    return _makeAuthenticatedRequest<Map<String, dynamic>>('/profile');
+  }
+
+  Future<Map<String, dynamic>> updateProfile({
+    String? nombre,
+    String? contrasenaActual,
+    String? nuevaContrasena,
+    String? confirmarNuevaContrasena,
+  }) {
+    final body = <String, dynamic>{};
+    if (nombre != null) body['nombre'] = nombre;
+    if (contrasenaActual != null) body['contraseñaActual'] = contrasenaActual;
+    if (nuevaContrasena != null) body['nuevaContraseña'] = nuevaContrasena;
+    if (confirmarNuevaContrasena != null)
+      body['confirmarNuevaContraseña'] = confirmarNuevaContrasena;
+
+    return _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/profile',
+      method: 'PUT',
+      body: body,
+    );
+  }
+
+  // ===================================================================
+  // AÑADIDOS: Métodos para la gestión de Amigos
+  // ===================================================================
+
+  /// Busca usuarios por nombre o email.
+  /// Llama a: GET /api/users/search?q={query}
+  Future<List<dynamic>> searchUsers(String query) async {
+    if (query.length < 2) return [];
+    final response = await _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/users/search?q=$query',
+    );
+    return response['users'] as List<dynamic>;
+  }
+
+  /// Envía una solicitud de amistad a un usuario.
+  /// Llama a: POST /api/friends/invitations
+  Future<void> sendFriendInvitation(int userId) {
+    return _makeAuthenticatedRequest<void>(
+      '/friends/invitations',
+      method: 'POST',
+      body: {'solicitado_id': userId},
+    );
+  }
+
+  /// Obtiene las invitaciones de amistad enviadas y recibidas.
+  /// Llama a: GET /api/friends/invitations
+  Future<Map<String, dynamic>> getFriendInvitations() {
+    return _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/friends/invitations',
+    );
+  }
+
+  /// Responde a una invitación de amistad (aceptar o rechazar).
+  /// Llama a: PUT /api/friends/invitations/{invitationId}
+  Future<void> respondToInvitation(int invitationId, String action) {
+    // 'action' debe ser 'accept' o 'reject'
+    return _makeAuthenticatedRequest<void>(
+      '/friends/invitations/$invitationId',
+      method: 'PUT',
+      body: {'action': action},
+    );
+  }
+
+  /// Obtiene la lista de amigos del usuario.
+  /// Llama a: GET /api/friends
+  Future<List<dynamic>> getFriends() async {
+    final response = await _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/friends',
+    );
+    return response['friends'] as List<dynamic>;
+  }
+
+  /// Obtiene las estadísticas de un amigo específico.
+  /// Llama a: GET /api/users/{userId}/stats
+  Future<Map<String, dynamic>> getFriendStats(int friendId) {
+    return _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/users/$friendId/stats',
+    );
+  }
+
+  /// Elimina a un amigo.
+  /// Llama a: DELETE /api/friends/{friendId}
+  Future<void> deleteFriend(int friendId) {
+    return _makeAuthenticatedRequest<void>(
+      '/friends/$friendId',
+      method: 'DELETE',
+    );
+  }
+
+  // ===================================================================
+  // AÑADIDOS: Métodos para la gestión de Rutinas
+  // ===================================================================
+
+  /// Obtiene todas las rutinas del usuario.
+  Future<List<dynamic>> getRoutines() async {
+    final response = await _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/routines',
+    );
+    return response['routines'] as List<dynamic>;
+  }
+
+  /// Crea una nueva rutina.
+  Future<Map<String, dynamic>> createRoutine(
+    String nombre,
+    String? descripcion,
+  ) async {
+    final body = {'nombre': nombre};
+    if (descripcion != null) {
+      body['descripcion'] = descripcion;
+    }
+    final response = await _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/routines',
+      method: 'POST',
+      body: body,
+    );
+    return response['routine'] as Map<String, dynamic>;
+  }
+
+  /// Obtiene los detalles de una rutina específica, incluyendo sus hábitos.
+  Future<Map<String, dynamic>> getRoutineDetails(int routineId) {
+    return _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/routines/$routineId',
+    );
+  }
+
+  /// Asocia un hábito existente a una rutina.
+  Future<void> addHabitToRoutine(int routineId, int habitId) {
+    return _makeAuthenticatedRequest<void>(
+      '/routines/$routineId/habits',
+      method: 'POST',
+      body: {'habitId': habitId},
+    );
+  }
+
+  /// Elimina un hábito de una rutina.
+  /// ¡Importante! La API espera el habitId en el cuerpo de una petición DELETE.
+  Future<void> removeHabitFromRoutine(int routineId, int habitId) async {
     final token = await getToken();
     if (token == null) throw Exception('No autenticado.');
 
-    debugPrint('Enviando petición de progreso con token: $token');
+    final url = Uri.parse('$_baseUrl/routines/$routineId/habits');
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+    final body = json.encode({'habitId': habitId});
 
-    final url = Uri.parse('$_baseUrl/habits/log');
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: json.encode(logData),
-    );
+    // La librería http.delete no soporta un body directamente, se usa http.Request.
+    final request =
+        http.Request('DELETE', url)
+          ..headers.addAll(headers)
+          ..body = body;
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    final response = await http.Client()
+        .send(request)
+        .then(http.Response.fromStream);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
       throw _handleErrorResponse(response);
     }
   }
 
-  // ===================================================================
-  // MÉTODO CORREGIDO: Apunta al endpoint correcto en el backend.
-  // ===================================================================
-  /// Obtiene el registro de actividad de un mes y año específicos.
-  Future<Map<String, dynamic>> getActivityLog(int year, int month) async {
-    return await _makeAuthenticatedRequest<Map<String, dynamic>>((token) {
-      final url = Uri.parse('$_baseUrl/activity-log?year=$year&month=$month');
+  /// Elimina una rutina específica.
+  Future<void> deleteRoutine(int routineId) {
+    return _makeAuthenticatedRequest<void>(
+      '/routines/$routineId',
+      method: 'DELETE',
+    );
+  }
 
-      debugPrint('Fetching activity log from: $url');
+  // ===================================================================
+  // AÑADIDO: Método para Logros
+  // ===================================================================
 
-      return http.get(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json', // Es buena práctica incluirlo
-        },
-      );
-    });
+  /// Obtiene la lista completa de logros y su estado de desbloqueo.
+  Future<List<dynamic>> getAchievements() async {
+    // La API devuelve un objeto {"achievements": [...]}, extraemos la lista.
+    final response = await _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/achievements',
+    );
+    return response['achievements'] as List<dynamic>;
+  }
+
+  // ===================================================================
+  // AÑADIDO: Método para Rankings
+  // ===================================================================
+
+  /// Obtiene la clasificación de usuarios.
+  /// scope puede ser 'global' o 'country'.
+  Future<List<dynamic>> getRankings({String scope = 'global'}) async {
+    final response = await _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/rankings?scope=$scope',
+    );
+    // La API devuelve un objeto {"rankings": [...]}, extraemos la lista.
+    return response['rankings'] as List<dynamic>;
+  }
+
+  // ===================================================================
+  // AÑADIDOS: Métodos para la gestión de Competiciones
+  // ===================================================================
+
+  /// Obtiene las competencias del usuario (creadas y en las que participa).
+  /// Llama a: GET /api/competitions/my
+  Future<Map<String, dynamic>> getMyCompetitions() {
+    // Pedimos que incluya estadísticas básicas para mostrar en la lista
+    return _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/competitions/my?include_stats=true',
+    );
+  }
+
+  /// Crea una nueva competición.
+  /// Llama a: POST /api/competitions
+  Future<Map<String, dynamic>> createCompetition(
+    Map<String, dynamic> competitionData,
+  ) {
+    return _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/competitions',
+      method: 'POST',
+      body: competitionData,
+    );
+  }
+
+  /// Obtiene los detalles y la clasificación de una competencia.
+  /// Llama a: GET /api/competitions/{id}/leaderboard
+  Future<Map<String, dynamic>> getCompetitionLeaderboard(int competitionId) {
+    return _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/competitions/$competitionId/leaderboard',
+    );
+  }
+
+  /// Permite que un usuario se una a una competencia.
+  /// Llama a: POST /api/competitions/{id}/join
+  Future<Map<String, dynamic>> joinCompetition(int competitionId) {
+    return _makeAuthenticatedRequest<Map<String, dynamic>>(
+      '/competitions/$competitionId/join',
+      method: 'POST',
+    );
   }
 }

@@ -1,97 +1,74 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 import '../models/achievement_model.dart';
 import '../models/habit_model.dart';
-import 'package:flutter/material.dart';
 
-class AchievementService {
-  // Lista Maestra de todos los logros posibles en la app
-  final List<Achievement> _allAchievements = [
-    Achievement(
-      id: 'novato',
-      title: 'Novato con Potencial',
-      description: 'Crea tu primer hábito.',
-      icon: Icons.star_border,
-    ),
-    Achievement(
-      id: 'imparable',
-      title: 'Imparable',
-      description: 'Completa 5 hábitos en un solo día.',
-      icon: Icons.whatshot,
-    ),
-    Achievement(
-      id: 'racha_7',
-      title: 'Racha de Fuego',
-      description: 'Mantén una racha de 7 días en cualquier hábito.',
-      icon: Icons.local_fire_department,
-    ),
-    Achievement(
-      id: 'constante',
-      title: 'Constancia Pura',
-      description: 'Crea 5 hábitos diferentes.',
-      icon: Icons.playlist_add_check,
-    ),
-    // ... aquí se pueden añadir muchos más
-  ];
+// Hacemos que el servicio notifique a los listeners cuando hay cambios de estado
+class AchievementService with ChangeNotifier {
+  final ApiService _apiService = ApiService();
 
-  List<Achievement> get allAchievements => _allAchievements;
+  List<Achievement> _achievements = [];
+  bool _isLoading = false;
+  String? _error;
 
-  // Cargar los logros desbloqueados desde el almacenamiento local
-  Future<void> loadUnlockedAchievements() async {
-    final prefs = await SharedPreferences.getInstance();
-    final unlockedIds = prefs.getStringList('unlocked_achievements') ?? [];
+  // Getters para que la UI acceda al estado de forma segura
+  List<Achievement> get achievements => _achievements;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
-    for (var achievement in _allAchievements) {
-      if (unlockedIds.contains(achievement.id)) {
-        achievement.isUnlocked = true;
-      }
+  /// Carga la lista de logros y su estado desde la API.
+  Future<void> fetchAchievements() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners(); // Notifica a la UI que estamos cargando
+
+    try {
+      final achievementsData = await _apiService.getAchievements();
+
+      // Convertimos los datos JSON en nuestra lista de modelos Achievement
+      _achievements =
+          achievementsData.map((data) {
+            return Achievement(
+              id: data['id'].toString(),
+              title: data['nombre'],
+              description: data['descripcion'],
+              // El ícono viene como string, lo mapeamos a un IconData real
+              icon: _getIconFromString(data['icono_url']),
+              isUnlocked: data['unlocked'] ?? false,
+            );
+          }).toList();
+    } catch (e) {
+      _error = e.toString();
+      debugPrint("Error al cargar logros: $_error");
+    } finally {
+      _isLoading = false;
+      notifyListeners(); // Notifica a la UI que la carga terminó (con éxito o error)
     }
   }
 
-  // Verificar y desbloquear nuevos logros basados en los datos del usuario
+  // Función de ayuda para convertir el nombre del icono en un objeto IconData.
+  // Es importante que los nombres de los iconos coincidan con los que envía la API.
+  static IconData _getIconFromString(String? iconName) {
+    switch (iconName) {
+      case 'star_border':
+        return Icons.star_border;
+      case 'whatshot':
+        return Icons.whatshot;
+      case 'local_fire_department':
+        return Icons.local_fire_department;
+      case 'playlist_add_check':
+        return Icons.playlist_add_check;
+      default:
+        return Icons
+            .emoji_events_outlined; // Un ícono por defecto si no se encuentra
+    }
+  }
+
+  // Esta función ya no es necesaria, ya que el backend determina los logros.
+  // La mantenemos por compatibilidad con el AuthProvider, pero podría eliminarse.
   Future<List<Achievement>> checkAndUnlockAchievements(
     List<Habit> habits,
   ) async {
-    final newUnlocked = <Achievement>[];
-
-    // Recargamos el estado actual por si acaso
-    await loadUnlockedAchievements();
-
-    // Lógica de verificación para cada logro
-    // Ejemplo para 'novato'
-    final novato = _allAchievements.firstWhere((a) => a.id == 'novato');
-    if (!novato.isUnlocked && habits.isNotEmpty) {
-      _unlock(novato);
-      newUnlocked.add(novato);
-    }
-
-    // Ejemplo para 'constante'
-    final constante = _allAchievements.firstWhere((a) => a.id == 'constante');
-    if (!constante.isUnlocked && habits.length >= 5) {
-      _unlock(constante);
-      newUnlocked.add(constante);
-    }
-
-    // Ejemplo para 'racha_7'
-    final racha7 = _allAchievements.firstWhere((a) => a.id == 'racha_7');
-    if (!racha7.isUnlocked && habits.any((h) => h.rachaActual >= 7)) {
-      _unlock(racha7);
-      newUnlocked.add(racha7);
-    }
-
-    // Devolvemos la lista de logros recién desbloqueados para mostrar una notificación
-    return newUnlocked;
-  }
-
-  // Función privada para guardar un logro como desbloqueado
-  Future<void> _unlock(Achievement achievement) async {
-    if (achievement.isUnlocked) return;
-
-    achievement.isUnlocked = true;
-    final prefs = await SharedPreferences.getInstance();
-    final unlockedIds = prefs.getStringList('unlocked_achievements') ?? [];
-    if (!unlockedIds.contains(achievement.id)) {
-      unlockedIds.add(achievement.id);
-      await prefs.setStringList('unlocked_achievements', unlockedIds);
-    }
+    return [];
   }
 }

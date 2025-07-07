@@ -33,10 +33,7 @@ class _LoginViewState extends State<LoginView> {
       await Provider.of<AuthProvider>(
         context,
         listen: false,
-      ).login(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
+      ).login(_emailController.text.trim(), _passwordController.text.trim());
 
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/dashboard');
@@ -44,9 +41,32 @@ class _LoginViewState extends State<LoginView> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              error.toString().replaceFirst('Exception: ', ''),
-            ),
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // <-- 1. MÉTODO NUEVO PARA MANEJAR EL LOGIN CON GOOGLE
+  Future<void> _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      await Provider.of<AuthProvider>(
+        context,
+        listen: false,
+      ).signInWithGoogle();
+
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -62,16 +82,13 @@ class _LoginViewState extends State<LoginView> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Imagen de fondo opcional
-          Container(color: const Color(0xFF0E0F1A)), // Fondo oscuro
+          Container(color: const Color(0xFF0E0F1A)),
 
-          // Capa borrosa
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Container(color: Colors.black.withOpacity(0.4)),
           ),
 
-          // Contenido del login
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -118,15 +135,8 @@ class _LoginViewState extends State<LoginView> {
                       const SizedBox(height: 32),
 
                       ElevatedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Inicio de sesión con Google no disponible temporalmente.',
-                              ),
-                            ),
-                          );
-                        },
+                        // <-- 2. CONECTAMOS EL MÉTODO AL BOTÓN
+                        onPressed: _isLoading ? null : _handleGoogleLogin,
                         icon: Image.network(
                           'https://img.icons8.com/color/48/google-logo.png',
                           width: 20,
@@ -207,20 +217,22 @@ class _LoginViewState extends State<LoginView> {
                       _isLoading
                           ? const CircularProgressIndicator()
                           : ElevatedButton(
-                              onPressed: _handleLogin,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF2563EB),
-                                minimumSize: const Size.fromHeight(50),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text(
-                                "Ingresar",
-                                style:
-                                    TextStyle(fontSize: 16, color: Colors.white),
+                            onPressed: _handleLogin,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2563EB),
+                              minimumSize: const Size.fromHeight(50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
+                            child: const Text(
+                              "Ingresar",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                     ],
                   ),
                 ),

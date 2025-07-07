@@ -30,4 +30,17 @@ class Habit {
       rachaActual: json['racha_actual'] as int? ?? 0, // Asignamos 0 si es nulo
     );
   }
+
+  // --- AÑADIDO: Método para convertir el objeto a un Map (JSON) ---
+  /// Convierte la instancia de Habit a un mapa JSON.
+  Map<String, dynamic> toJson() {
+    return {
+      'nombre': nombre,
+      'descripcion': descripcion,
+      'tipo': tipo,
+      'meta_objetivo': metaObjetivo,
+      // No incluimos id, fechaCreacion o rachaActual porque generalmente
+      // son gestionados por el backend y no se envían al crear/actualizar.
+    };
+  }
 }

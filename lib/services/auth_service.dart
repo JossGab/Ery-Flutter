@@ -24,6 +24,23 @@ class AuthService {
     }
   }
 
+  // ===================================================================
+  // MÉTODO AÑADIDO: Puente para la autenticación con Google
+  // ===================================================================
+  /// Envía el ID Token de Google al ApiService para autenticar al usuario.
+  Future<User> loginWithGoogle(String idToken) async {
+    try {
+      // 1. Llama al método loginWithGoogle de ApiService.
+      final userData = await _apiService.loginWithGoogle(idToken);
+
+      // 2. Convierte la respuesta en un objeto User.
+      return User.fromJson(userData);
+    } catch (e) {
+      // 3. Re-lanza cualquier error para que sea manejado por el UI.
+      rethrow;
+    }
+  }
+
   /// Lo mismo para el registro. Pasa la llamada directamente al ApiService.
   Future<void> register({
     required String name,
