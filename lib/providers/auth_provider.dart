@@ -232,15 +232,18 @@ class AuthProvider with ChangeNotifier {
 
   // ===================================================================
 
-  /// Obtiene los datos del dashboard y verifica los logros.
+  /// Obtiene los datos del dashboard.
   Future<void> fetchDashboardData() async {
     try {
       final data = await _apiService.getDashboardData();
       final habitsData = data['habits_con_estadisticas'] as List;
       _habits = habitsData.map((json) => Habit.fromJson(json)).toList();
 
-      _newlyUnlockedAchievements = await _achievementService
-          .checkAndUnlockAchievements(_habits);
+      // ===== CORRECCIÓN =====
+      // Se elimina la siguiente línea porque el método ya no existe en AchievementService.
+      // La lógica de desbloqueo ahora la hace la API.
+      // _newlyUnlockedAchievements = await _achievementService.checkAndUnlockAchievements(_habits);
+      // ======================
     } catch (e) {
       debugPrint("Fallo al obtener datos del dashboard: $e");
       if (e.toString().contains('Sesión expirada')) {

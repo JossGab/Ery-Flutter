@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/habit_model.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../models/habit_model.dart';
 import 'edit_habit_modal.dart';
 
 class HabitCard extends StatelessWidget {
@@ -26,17 +25,19 @@ class HabitCard extends StatelessWidget {
       builder:
           (_) => Wrap(
             children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.edit_outlined, color: Colors.white70),
-                title: const Text(
-                  'Editar Hábito',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  Navigator.of(context).pop(); // Cierra el menú
-                  _showEditModal(context); // Abre el modal de edición
-                },
-              ),
+              // ===== OPCIÓN DE EDITAR COMENTADA =====
+              // ListTile(
+              //   leading: const Icon(Icons.edit_outlined, color: Colors.white70),
+              //   title: const Text(
+              //     'Editar Hábito',
+              //     style: TextStyle(color: Colors.white),
+              //   ),
+              //   onTap: () {
+              //     Navigator.of(context).pop(); // Cierra el menú
+              //     _showEditModal(context); // Abre el modal de edición
+              //   },
+              // ),
+              // =======================================
               ListTile(
                 leading: const Icon(
                   Icons.delete_outline,

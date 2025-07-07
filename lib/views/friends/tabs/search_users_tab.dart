@@ -49,28 +49,35 @@ class _SearchUsersTabState extends State<SearchUsersTab> {
     }
     final userId = user['id'];
 
+    // 1. Verificar si ya es amigo
     final isFriend = provider.friends.any((friend) => friend?['id'] == userId);
     if (isFriend) {
       return ElevatedButton.icon(
         onPressed: null,
-        icon: const Icon(Icons.check_circle),
+        icon: const Icon(Icons.check_circle, color: Colors.white),
         label: const Text('Amigo'),
         style: ElevatedButton.styleFrom(
-          disabledBackgroundColor: Colors.green.withOpacity(0.3),
+          disabledBackgroundColor: Colors.green.withOpacity(0.4),
+          disabledForegroundColor: Colors.white,
         ),
       );
     }
 
+    // --- CORRECCIÓN CLAVE ---
+    // Se verifica la clave 'solicitado_id' directamente.
     final hasSentRequest = provider.sentInvitations.any(
-      (req) => req?['solicitado']?['id'] == userId,
+      (req) => req?['solicitado_id'] == userId,
     );
+    // --- FIN DE LA CORRECCIÓN ---
+
     if (hasSentRequest) {
       return ElevatedButton.icon(
         onPressed: null,
-        icon: const Icon(Icons.hourglass_top),
+        icon: const Icon(Icons.hourglass_top, color: Colors.white),
         label: const Text('Pendiente'),
         style: ElevatedButton.styleFrom(
-          disabledBackgroundColor: Colors.orange.withOpacity(0.3),
+          disabledBackgroundColor: Colors.orange.withOpacity(0.4),
+          disabledForegroundColor: Colors.white,
         ),
       );
     }
@@ -124,14 +131,12 @@ class _SearchUsersTabState extends State<SearchUsersTab> {
                   ),
                 );
               }
-              final filteredResults =
-                  provider.searchResults
-                      .where((user) => user?['id']?.toString() != currentUserId)
-                      .toList();
+
               return ListView.builder(
-                itemCount: filteredResults.length,
+                itemCount: provider.searchResults.length,
                 itemBuilder: (context, index) {
-                  final user = filteredResults[index];
+                  final user = provider.searchResults[index];
+                  // El filtrado del propio usuario se hace ahora en _buildActionButton
                   return ListTile(
                     leading: CircleAvatar(
                       child: Text(user?['nombre']?[0].toUpperCase() ?? '?'),

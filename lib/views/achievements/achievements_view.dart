@@ -1,5 +1,4 @@
 // lib/views/achievements/achievements_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/achievement_service.dart';
@@ -16,7 +15,6 @@ class _AchievementsViewState extends State<AchievementsView> {
   @override
   void initState() {
     super.initState();
-    // Cargamos los logros desde la API al iniciar la vista
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AchievementService>().fetchAchievements();
     });
@@ -24,7 +22,6 @@ class _AchievementsViewState extends State<AchievementsView> {
 
   @override
   Widget build(BuildContext context) {
-    // Usamos Consumer para escuchar los cambios del AchievementService
     return Consumer<AchievementService>(
       builder: (context, achievementService, child) {
         return Scaffold(
@@ -70,7 +67,37 @@ class AchievementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Widget que se mostrará visualmente
+    // CORRECCIÓN: Se reemplaza el Icon por un Widget que puede ser
+    // una imagen de red o un ícono de respaldo.
+    Widget iconWidget;
+    if (achievement.iconUrl != null && achievement.iconUrl!.isNotEmpty) {
+      iconWidget = Image.network(
+        achievement.iconUrl!,
+        width: 48,
+        height: 48,
+        color: achievement.isUnlocked ? null : Colors.grey.shade600,
+        colorBlendMode: achievement.isUnlocked ? null : BlendMode.saturation,
+        errorBuilder:
+            (context, error, stackTrace) => Icon(
+              Icons.emoji_events_outlined, // Ícono de fallback si la URL falla
+              size: 48,
+              color:
+                  achievement.isUnlocked
+                      ? Colors.amber.shade400
+                      : Colors.grey.shade600,
+            ),
+      );
+    } else {
+      iconWidget = Icon(
+        Icons.emoji_events_outlined,
+        size: 48,
+        color:
+            achievement.isUnlocked
+                ? Colors.amber.shade400
+                : Colors.grey.shade600,
+      );
+    }
+
     final cardContent = Container(
       decoration: BoxDecoration(
         color:
@@ -89,14 +116,7 @@ class AchievementCard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            achievement.icon,
-            size: 48,
-            color:
-                achievement.isUnlocked
-                    ? Colors.amber.shade400
-                    : Colors.grey.shade600,
-          ),
+          iconWidget, // Usamos el widget de ícono/imagen que creamos
           const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -129,12 +149,8 @@ class AchievementCard extends StatelessWidget {
       ),
     );
 
-    // Si el logro NO está desbloqueado, lo envolvemos con Opacity y ColorFiltered
     if (!achievement.isUnlocked) {
-      return ColorFiltered(
-        colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.saturation),
-        child: Opacity(opacity: 0.6, child: cardContent),
-      );
+      return Opacity(opacity: 0.6, child: cardContent);
     }
 
     return cardContent;

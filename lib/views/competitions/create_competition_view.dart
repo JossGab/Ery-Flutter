@@ -15,6 +15,7 @@ class _CreateCompetitionViewState extends State<CreateCompetitionView> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _goalController = TextEditingController();
+  final _valueController = TextEditingController();
 
   String? _selectedGoalType;
   DateTime? _startDate;
@@ -33,6 +34,7 @@ class _CreateCompetitionViewState extends State<CreateCompetitionView> {
     _nameController.dispose();
     _descriptionController.dispose();
     _goalController.dispose();
+    _valueController.dispose();
     super.dispose();
   }
 
@@ -76,6 +78,7 @@ class _CreateCompetitionViewState extends State<CreateCompetitionView> {
     setState(() => _isLoading = true);
 
     final int goalValue = int.tryParse(_goalController.text) ?? 0;
+    final double valuePerPoint = double.tryParse(_valueController.text) ?? 1.0;
 
     final competitionData = {
       'nombre': _nameController.text.trim(),
@@ -84,7 +87,7 @@ class _CreateCompetitionViewState extends State<CreateCompetitionView> {
 
       // --- CORRECCIÓN: Enviamos ambos campos como lo espera la API ---
       'meta_objetivo': goalValue,
-      'valor': goalValue,
+      'valor': valuePerPoint,
 
       // --- FIN DE LA CORRECCIÓN ---
       'fecha_inicio': _startDate!.toIso8601String().substring(
@@ -171,11 +174,39 @@ class _CreateCompetitionViewState extends State<CreateCompetitionView> {
               controller: _goalController,
               decoration: const InputDecoration(
                 labelText: 'Meta a alcanzar (ej. 100)',
+                helperText: 'Número de días de racha, total de hábitos, etc.',
               ),
               keyboardType: TextInputType.number,
-              validator:
-                  (v) => (v == null || v.isEmpty) ? 'Campo requerido' : null,
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Campo requerido';
+                if (int.tryParse(v) == null || int.parse(v) <= 0) {
+                  return 'Debe ser un número entero y positivo';
+                }
+                return null;
+              },
             ),
+            const SizedBox(height: 16),
+
+            // --- CAMPO AÑADIDO Y CORREGIDO ---
+            TextFormField(
+              controller: _valueController,
+              decoration: const InputDecoration(
+                labelText: 'Valor por Punto (ej. 1.0)',
+                helperText: 'Puntos otorgados por cada unidad de progreso.',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Campo requerido';
+                if (double.tryParse(v) == null || double.parse(v) <= 0) {
+                  return 'Debe ser un número mayor a 0';
+                }
+                return null;
+              },
+            ),
+
+            // --- FIN DEL CAMPO AÑADIDO ---
             const SizedBox(height: 24),
             Row(
               children: [
@@ -210,7 +241,10 @@ class _CreateCompetitionViewState extends State<CreateCompetitionView> {
                       ? const SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 3),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          color: Colors.white,
+                        ),
                       )
                       : const Text('Crear Competencia'),
             ),

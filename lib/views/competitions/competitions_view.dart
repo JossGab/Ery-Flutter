@@ -15,6 +15,7 @@ class _CompetitionsViewState extends State<CompetitionsView> {
   @override
   void initState() {
     super.initState();
+    // Llama al provider para cargar los datos cuando la vista se construye
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CompetitionsProvider>().fetchMyCompetitions();
     });
@@ -24,7 +25,10 @@ class _CompetitionsViewState extends State<CompetitionsView> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const CreateCompetitionView()),
-    );
+    ).then((_) {
+      // Refresca la lista cuando volvemos de la pantalla de creación
+      context.read<CompetitionsProvider>().fetchMyCompetitions();
+    });
   }
 
   void _navigateToCompetitionDetails(int competitionId) {
@@ -44,12 +48,14 @@ class _CompetitionsViewState extends State<CompetitionsView> {
         onPressed: _navigateToCreateCompetition,
         label: const Text('Crear Competencia'),
         icon: const Icon(Icons.add),
+        backgroundColor: Colors.indigo,
       ),
       body: Consumer<CompetitionsProvider>(
         builder: (context, provider, child) {
           if (provider.isLoadingList) {
             return const Center(child: CircularProgressIndicator());
           }
+
           if (provider.error != null) {
             return Center(
               child: Text(
@@ -58,6 +64,7 @@ class _CompetitionsViewState extends State<CompetitionsView> {
               ),
             );
           }
+
           if (provider.myCompetitions.isEmpty) {
             return const Center(
               child: Padding(
@@ -70,13 +77,15 @@ class _CompetitionsViewState extends State<CompetitionsView> {
               ),
             );
           }
+
           return RefreshIndicator(
             onRefresh: () => provider.fetchMyCompetitions(),
+            color: Colors.white,
+            backgroundColor: Colors.indigo,
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
               itemCount: provider.myCompetitions.length,
               itemBuilder: (context, index) {
-                // --- CORRECCIÓN CLAVE: Usamos el objeto directamente ---
                 final competition = provider.myCompetitions[index];
                 return _CompetitionCard(
                   competition: competition,
@@ -91,7 +100,7 @@ class _CompetitionsViewState extends State<CompetitionsView> {
   }
 }
 
-// Widget para la tarjeta de cada competición (Ya estaba correcto, solo se mantiene)
+// --- WIDGET DE LA TARJETA CORREGIDO ---
 class _CompetitionCard extends StatelessWidget {
   final Map<String, dynamic> competition;
   final VoidCallback onTap;
@@ -99,7 +108,9 @@ class _CompetitionCard extends StatelessWidget {
   const _CompetitionCard({required this.competition, required this.onTap});
 
   Widget _buildStatusChip() {
-    final status = competition['estado'] ?? 'desconocido';
+    // CORRECCIÓN: Usamos la clave "status" que viene de la API
+    final status =
+        competition['status']?.toString().toLowerCase() ?? 'desconocido';
     Color chipColor;
     String statusText;
 
@@ -108,17 +119,17 @@ class _CompetitionCard extends StatelessWidget {
         chipColor = Colors.green.withOpacity(0.3);
         statusText = 'Activa';
         break;
-      case 'proxima':
-        chipColor = Colors.blue.withOpacity(0.3);
-        statusText = 'Próxima';
-        break;
       case 'finalizada':
-        chipColor = Colors.red.withOpacity(0.3);
+        chipColor = Colors.grey.withOpacity(0.3);
         statusText = 'Finalizada';
+        break;
+      case 'cancelada':
+        chipColor = Colors.red.withOpacity(0.3);
+        statusText = 'Cancelada';
         break;
       default:
         chipColor = Colors.grey.withOpacity(0.3);
-        statusText = 'Desconocido';
+        statusText = status.capitalize();
     }
 
     return Chip(
@@ -151,10 +162,12 @@ class _CompetitionCard extends StatelessWidget {
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Text(
-                      competition['nombre'] ?? 'Competencia sin nombre',
+                      // CORRECCIÓN: Usar 'name'
+                      competition['name'] ?? 'Competencia sin nombre',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -167,7 +180,8 @@ class _CompetitionCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                competition['descripcion'] ?? 'Sin descripción.',
+                // CORRECCIÓN: Usar 'description'
+                competition['description'] ?? 'Sin descripción.',
                 style: const TextStyle(color: Colors.white70),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -185,7 +199,8 @@ class _CompetitionCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '${competition['participantes_count'] ?? 0} Participantes',
+                        // CORRECCIÓN: Usar 'participant_count'
+                        '${competition['participant_count'] ?? 0} Participantes',
                         style: const TextStyle(color: Colors.white54),
                       ),
                     ],
@@ -198,5 +213,13 @@ class _CompetitionCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// Pequeña extensión para capitalizar la primera letra (opcional pero útil)
+extension StringExtension on String {
+  String capitalize() {
+    if (isEmpty) return "";
+    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }

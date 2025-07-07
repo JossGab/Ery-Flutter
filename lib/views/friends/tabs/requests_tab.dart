@@ -42,21 +42,26 @@ class _RequestsTabState extends State<RequestsTab> {
             itemCount: provider.receivedInvitations.length,
             itemBuilder: (context, index) {
               final request = provider.receivedInvitations[index];
-              final requester = request['solicitante'];
+
+              // --- CORRECCIÓN CLAVE ---
+              // Accedemos a las claves directamente desde el objeto 'request'
+              final requesterName = request['solicitante_nombre'] ?? 'Usuario';
+              // --- FIN DE LA CORRECCIÓN ---
+
               return Card(
                 color: const Color(0xFF1F2937),
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: ListTile(
                   leading: CircleAvatar(
-                    child: Text(requester['nombre'][0].toUpperCase()),
+                    child: Text(requesterName[0].toUpperCase()),
                   ),
                   title: Text(
-                    requester['nombre'],
+                    requesterName,
                     style: const TextStyle(color: Colors.white),
                   ),
-                  subtitle: Text(
+                  subtitle: const Text(
                     'Quiere ser tu amigo.',
-                    style: const TextStyle(color: Colors.white70),
+                    style: TextStyle(color: Colors.white70),
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,

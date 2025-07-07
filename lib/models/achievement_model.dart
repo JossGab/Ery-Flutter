@@ -4,14 +4,14 @@ class Achievement {
   final String id;
   final String title;
   final String description;
-  final IconData icon;
+  final String? iconUrl;
   bool isUnlocked;
 
   Achievement({
     required this.id,
     required this.title,
     required this.description,
-    required this.icon,
+    required this.iconUrl,
     this.isUnlocked = false,
   });
 }
