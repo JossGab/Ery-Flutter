@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../providers/auth_provider.dart';
 
 class LoginView extends StatefulWidget {
@@ -51,7 +53,6 @@ class _LoginViewState extends State<LoginView> {
     }
   }
 
-  // <-- 1. MÉTODO NUEVO PARA MANEJAR EL LOGIN CON GOOGLE
   Future<void> _handleGoogleLogin() async {
     setState(() => _isLoading = true);
     try {
@@ -84,8 +85,9 @@ class _LoginViewState extends State<LoginView> {
         children: [
           Container(color: const Color(0xFF0E0F1A)),
 
+          // Fondo borroso estilo glassmorphism
           BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(color: Colors.black.withOpacity(0.4)),
           ),
 
@@ -105,25 +107,26 @@ class _LoginViewState extends State<LoginView> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
+                      Text(
                         "Iniciar Sesión",
-                        style: TextStyle(
+                        style: GoogleFonts.poppins(
                           fontSize: 28,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
-                      ),
+                      ).animate().fade(duration: 500.ms).slideY(),
+
                       const SizedBox(height: 8),
                       GestureDetector(
                         onTap: () => Navigator.pushNamed(context, '/register'),
-                        child: const Text.rich(
+                        child: Text.rich(
                           TextSpan(
                             text: "¿No tienes una cuenta? ",
-                            style: TextStyle(color: Colors.white54),
+                            style: GoogleFonts.poppins(color: Colors.white54),
                             children: [
                               TextSpan(
                                 text: "Regístrate aquí",
-                                style: TextStyle(
+                                style: GoogleFonts.poppins(
                                   color: Colors.blueAccent,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -132,23 +135,29 @@ class _LoginViewState extends State<LoginView> {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 32),
 
                       ElevatedButton.icon(
-                        // <-- 2. CONECTAMOS EL MÉTODO AL BOTÓN
                         onPressed: _isLoading ? null : _handleGoogleLogin,
                         icon: Image.network(
                           'https://img.icons8.com/color/48/google-logo.png',
                           width: 20,
                           height: 20,
                         ),
-                        label: const Text("Iniciar sesión con Google"),
+                        label: Text(
+                          "Iniciar sesión con Google",
+                          style: GoogleFonts.poppins(),
+                        ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[800],
+                          backgroundColor: Colors.grey[850],
                           foregroundColor: Colors.white,
                           minimumSize: const Size.fromHeight(50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                      ),
+                      ).animate().fade(delay: 200.ms).slideY(begin: 0.2),
 
                       const SizedBox(height: 16),
 
@@ -182,6 +191,7 @@ class _LoginViewState extends State<LoginView> {
                           return null;
                         },
                       ),
+
                       const SizedBox(height: 16),
 
                       _buildTextField(
@@ -217,26 +227,26 @@ class _LoginViewState extends State<LoginView> {
                       _isLoading
                           ? const CircularProgressIndicator()
                           : ElevatedButton(
-                            onPressed: _handleLogin,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2563EB),
-                              minimumSize: const Size.fromHeight(50),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                              onPressed: _handleLogin,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF2563EB),
+                                minimumSize: const Size.fromHeight(50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
-                            ),
-                            child: const Text(
-                              "Ingresar",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
+                              child: Text(
+                                "Ingresar",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
-                          ),
+                            ).animate().fade(delay: 300.ms).slideY(begin: 0.2),
                     ],
                   ),
                 ),
-              ),
+              ).animate().fade(duration: 700.ms).slideY(begin: 0.3),
             ),
           ),
         ],
@@ -257,10 +267,10 @@ class _LoginViewState extends State<LoginView> {
       obscureText: obscure,
       keyboardType: keyboardType,
       validator: validator,
-      style: const TextStyle(color: Colors.white),
+      style: GoogleFonts.poppins(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
+        labelStyle: GoogleFonts.poppins(color: Colors.white70),
         filled: true,
         fillColor: Colors.white10,
         suffixIcon: suffixIcon,

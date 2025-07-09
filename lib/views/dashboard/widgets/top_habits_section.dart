@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../models/habit_model.dart';
 
 class TopHabitsSection extends StatelessWidget {
@@ -19,12 +20,12 @@ class TopHabitsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "🔥 Hábitos en Racha",
-          style: TextStyle(
+          style: GoogleFonts.poppins(
             color: Colors.white,
             fontSize: 22,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 20),
@@ -46,9 +47,9 @@ class TopHabitsSection extends StatelessWidget {
                     border: Border.all(color: Colors.white.withOpacity(0.1)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
@@ -58,10 +59,17 @@ class TopHabitsSection extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        _getIconForHabitType(habit.tipo),
-                        color: Colors.amberAccent,
-                        size: 30,
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.amberAccent.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: Icon(
+                          _getIconForHabitType(habit.tipo),
+                          color: Colors.amberAccent,
+                          size: 28,
+                        ),
                       ),
                       const SizedBox(width: 20),
                       Expanded(
@@ -70,16 +78,17 @@ class TopHabitsSection extends StatelessWidget {
                           children: [
                             Text(
                               habit.nombre,
-                              style: const TextStyle(
+                              style: GoogleFonts.poppins(
                                 color: Colors.white,
-                                fontWeight: FontWeight.w600,
                                 fontSize: 18,
+                                fontWeight: FontWeight.w600,
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
                             Text(
                               _getLabelForHabitType(habit.tipo),
-                              style: const TextStyle(
+                              style: GoogleFonts.poppins(
                                 color: Colors.white70,
                                 fontSize: 14,
                               ),
@@ -90,7 +99,7 @@ class TopHabitsSection extends StatelessWidget {
                       const SizedBox(width: 12),
                       Text(
                         "${habit.rachaActual} días",
-                        style: const TextStyle(
+                        style: GoogleFonts.poppins(
                           color: Colors.amber,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,

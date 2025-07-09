@@ -1,8 +1,4 @@
-/*
-================================================================================
- ARCHIVO: lib/views/profile/edit_profile_view.dart (Versión Final y Funcional)
-================================================================================
-*/
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -26,7 +22,6 @@ class _EditProfileViewState extends State<EditProfileView> {
   @override
   void initState() {
     super.initState();
-    // Pre-llenamos el campo de nombre con el valor actual del perfil.
     final currentName = context.read<AuthProvider>().userProfile?['nombre'];
     _nameController.text = currentName ?? '';
   }
@@ -41,153 +36,162 @@ class _EditProfileViewState extends State<EditProfileView> {
   }
 
   Future<void> _handleUpdateProfile() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
+    if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
     final authProvider = context.read<AuthProvider>();
-
-    // Solo se envían las contraseñas si el usuario ha escrito en los campos.
-    final String? currentPassword =
-        _currentPasswordController.text.isNotEmpty
-            ? _currentPasswordController.text
-            : null;
-    final String? newPassword =
-        _newPasswordController.text.isNotEmpty
-            ? _newPasswordController.text
-            : null;
-    final String? confirmPassword =
-        _confirmPasswordController.text.isNotEmpty
-            ? _confirmPasswordController.text
-            : null;
-
     final success = await authProvider.updateUserProfile(
-      newName: _nameController.text,
-      currentPassword: currentPassword,
-      newPassword: newPassword,
-      confirmNewPassword: confirmPassword,
+      newName: _nameController.text.trim(),
+      currentPassword:
+          _currentPasswordController.text.trim().isNotEmpty
+              ? _currentPasswordController.text.trim()
+              : null,
+      newPassword:
+          _newPasswordController.text.trim().isNotEmpty
+              ? _newPasswordController.text.trim()
+              : null,
+      confirmNewPassword:
+          _confirmPasswordController.text.trim().isNotEmpty
+              ? _confirmPasswordController.text.trim()
+              : null,
     );
 
-    if (mounted) {
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Perfil actualizado con éxito."),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.of(context).pop(); // Regresar a la pantalla anterior
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Error al actualizar. Verifica tu contraseña actual si la cambiaste.",
-            ),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    }
+    if (!mounted) return;
+
     setState(() => _isLoading = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? "Perfil actualizado con éxito."
+              : "Error al actualizar. Verifica tu contraseña actual si la cambiaste.",
+        ),
+        backgroundColor: success ? Colors.green : Colors.redAccent,
+      ),
+    );
+
+    if (success) Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E0F1A),
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text("Editar Perfil"),
-        backgroundColor: const Color(0xFF1B1D2A),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Información Personal",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF0E0F1A), Color(0xFF1B1D2A)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _nameController,
-                label: "Nombre completo",
-                validator:
-                    (value) =>
-                        (value == null || value.isEmpty)
-                            ? 'El nombre no puede estar vacío'
-                            : null,
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                "Cambiar Contraseña (opcional)",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _currentPasswordController,
-                label: "Contraseña Actual",
-                obscureText: true,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _newPasswordController,
-                label: "Nueva Contraseña",
-                obscureText: true,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _confirmPasswordController,
-                label: "Confirmar Nueva Contraseña",
-                obscureText: true,
-                validator: (value) {
-                  if (_newPasswordController.text.isNotEmpty &&
-                      value != _newPasswordController.text) {
-                    return 'Las contraseñas nuevas no coinciden';
-                  }
-                  if (_newPasswordController.text.isNotEmpty &&
-                      _currentPasswordController.text.isEmpty) {
-                    return 'Debes ingresar tu contraseña actual';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child:
-                    _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : ElevatedButton.icon(
-                          icon: const Icon(Icons.save_outlined),
-                          label: const Text("Guardar Cambios"),
-                          onPressed: _handleUpdateProfile,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                Theme.of(context).colorScheme.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-              ),
-            ],
+            ),
           ),
-        ),
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              color: Colors.black.withOpacity(0.3),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  children: [
+                    const Text(
+                      "Información Personal",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _nameController,
+                      label: "Nombre completo",
+                      validator:
+                          (value) =>
+                              (value == null || value.isEmpty)
+                                  ? 'El nombre no puede estar vacío'
+                                  : null,
+                    ),
+                    const SizedBox(height: 32),
+                    const Text(
+                      "Cambiar Contraseña (opcional)",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _currentPasswordController,
+                      label: "Contraseña Actual",
+                      obscureText: true,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _newPasswordController,
+                      label: "Nueva Contraseña",
+                      obscureText: true,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _confirmPasswordController,
+                      label: "Confirmar Nueva Contraseña",
+                      obscureText: true,
+                      validator: (value) {
+                        if (_newPasswordController.text.isNotEmpty &&
+                            value != _newPasswordController.text) {
+                          return 'Las contraseñas nuevas no coinciden';
+                        }
+                        if (_newPasswordController.text.isNotEmpty &&
+                            _currentPasswordController.text.isEmpty) {
+                          return 'Debes ingresar tu contraseña actual';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 40),
+                    SizedBox(
+                      height: 52,
+                      child:
+                          _isLoading
+                              ? const Center(child: CircularProgressIndicator())
+                              : ElevatedButton.icon(
+                                icon: const Icon(Icons.save_alt_rounded),
+                                label: const Text(
+                                  "Guardar Cambios",
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                                onPressed: _handleUpdateProfile,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withOpacity(0.9),
+                                  foregroundColor: Colors.white,
+                                  elevation: 10,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                              ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -198,24 +202,32 @@ class _EditProfileViewState extends State<EditProfileView> {
     bool obscureText = false,
     String? Function(String?)? validator,
   }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      validator: validator,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white24),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
-          borderRadius: BorderRadius.circular(12),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        validator: validator,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Colors.white70),
+          filled: true,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.white24),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
         ),
       ),
     );

@@ -1,8 +1,3 @@
-/*
-================================================================================
- ARCHIVO: lib/views/habits/widgets/habit_card.dart (Versión con CRUD completo)
-================================================================================
-*/
 import 'dart:ui';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -15,67 +10,68 @@ class HabitCard extends StatelessWidget {
   final Habit habit;
   const HabitCard({super.key, required this.habit});
 
-  // --- LÓGICA PARA EL MENÚ DE OPCIONES ---
-
-  /// Muestra el menú inferior con las opciones para editar o eliminar.
   void _showOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1F2937),
+      backgroundColor: Colors.transparent,
       builder:
-          (_) => Wrap(
-            children: <Widget>[
-              // ===== OPCIÓN DE EDITAR COMENTADA =====
-              // ListTile(
-              //   leading: const Icon(Icons.edit_outlined, color: Colors.white70),
-              //   title: const Text(
-              //     'Editar Hábito',
-              //     style: TextStyle(color: Colors.white),
-              //   ),
-              //   onTap: () {
-              //     Navigator.of(context).pop(); // Cierra el menú
-              //     _showEditModal(context); // Abre el modal de edición
-              //   },
-              // ),
-              // =======================================
-              ListTile(
-                leading: const Icon(
-                  Icons.delete_outline,
-                  color: Colors.redAccent,
-                ),
-                title: const Text(
-                  'Eliminar Hábito',
-                  style: TextStyle(color: Colors.redAccent),
-                ),
-                onTap: () {
-                  Navigator.of(context).pop(); // Cierra el menú
-                  _showDeleteConfirmation(context); // Muestra la confirmación
-                },
+          (_) => Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1F2937),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
               ),
-            ],
+            ),
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(
+                    Icons.edit_outlined,
+                    color: Colors.white70,
+                  ),
+                  title: const Text(
+                    'Editar Hábito',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showEditModal(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.redAccent,
+                  ),
+                  title: const Text(
+                    'Eliminar Hábito',
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showDeleteConfirmation(context);
+                  },
+                ),
+              ],
+            ),
           ),
     );
   }
 
-  /// Abre el modal para editar el hábito.
   void _showEditModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        // Pasamos el hábito actual al modal de edición
-        return EditHabitModal(habit: habit);
-      },
+      builder: (_) => EditHabitModal(habit: habit),
     );
   }
 
-  /// Muestra el diálogo de confirmación antes de eliminar un hábito.
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
       builder:
-          (ctx) => AlertDialog(
+          (_) => AlertDialog(
             backgroundColor: const Color(0xFF1F2937),
             title: const Text(
               'Confirmar Eliminación',
@@ -87,23 +83,22 @@ class HabitCard extends StatelessWidget {
             ),
             actions: [
               TextButton(
+                onPressed: () => Navigator.pop(context),
                 child: const Text(
                   'Cancelar',
-                  style: TextStyle(color: Colors.white60),
+                  style: TextStyle(color: Colors.white54),
                 ),
-                onPressed: () => Navigator.of(ctx).pop(),
               ),
               TextButton(
                 style: TextButton.styleFrom(backgroundColor: Colors.redAccent),
+                onPressed: () {
+                  context.read<AuthProvider>().deleteHabit(habit.id);
+                  Navigator.pop(context);
+                },
                 child: const Text(
                   'Eliminar',
                   style: TextStyle(color: Colors.white),
                 ),
-                onPressed: () {
-                  // Llama al provider para eliminar el hábito
-                  context.read<AuthProvider>().deleteHabit(habit.id);
-                  Navigator.of(ctx).pop();
-                },
               ),
             ],
           ),
@@ -111,18 +106,15 @@ class HabitCard extends StatelessWidget {
   }
 
   void _logProgress(BuildContext context, Map<String, dynamic> payload) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider = context.read<AuthProvider>();
     final logData = {
       'habito_id': habit.id,
       'fecha_registro': DateTime.now().toIso8601String().substring(0, 10),
       ...payload,
     };
-    authProvider.logHabitProgress(logData).catchError((error) {
+    authProvider.logHabitProgress(logData).catchError((e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${error.toString()}'),
-          backgroundColor: Colors.redAccent,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
       );
     });
   }
@@ -133,31 +125,30 @@ class HabitCard extends StatelessWidget {
     final accentColor = isBadHabit ? Colors.orangeAccent : Colors.greenAccent;
 
     return Padding(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.07),
+              color: Colors.white.withOpacity(0.06),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(color: Colors.white.withOpacity(0.12)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 30,
+                  color: Colors.black.withOpacity(0.25),
+                  blurRadius: 24,
                   offset: const Offset(0, 12),
                 ),
               ],
             ),
-            padding: const EdgeInsets.fromLTRB(20, 12, 12, 16),
+            padding: const EdgeInsets.fromLTRB(20, 16, 16, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Título y menú
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Icon(
                       isBadHabit
@@ -178,7 +169,6 @@ class HabitCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const Spacer(),
                     Column(
                       children: [
                         const Icon(
@@ -189,28 +179,23 @@ class HabitCard extends StatelessWidget {
                         Text(
                           '${habit.rachaActual}d',
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: Colors.white70,
                             fontSize: 13,
                           ),
                         ),
                       ],
                     ),
-                    // --- AÑADIDO: Botón de menú ---
                     IconButton(
-                      icon: const Icon(Icons.more_vert, color: Colors.white54),
+                      icon: const Icon(Icons.more_vert, color: Colors.white60),
                       onPressed: () => _showOptions(context),
                     ),
                   ],
                 ),
 
+                // Descripción
                 if (habit.descripcion != null && habit.descripcion!.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(
-                      left: 40,
-                      right: 20,
-                      top: 4,
-                      bottom: 8,
-                    ),
+                    padding: const EdgeInsets.only(left: 40, top: 8, bottom: 8),
                     child: Text(
                       habit.descripcion!,
                       style: const TextStyle(
@@ -222,12 +207,14 @@ class HabitCard extends StatelessWidget {
                     ),
                   ),
 
-                const Spacer(),
-
+                // Barra de progreso si es numérico
                 if (habit.tipo == 'MEDIBLE_NUMERICO')
-                  _buildProgressBar(habit, accentColor),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: _buildProgressBar(habit, accentColor),
+                  ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 _buildActionButton(context, accentColor),
               ],
             ),
@@ -238,7 +225,7 @@ class HabitCard extends StatelessWidget {
   }
 
   Widget _buildProgressBar(Habit habit, Color color) {
-    double current = 3; // Ejemplo temporal
+    double current = 3; // Valor fijo de prueba
     double goal = habit.metaObjetivo?.toDouble() ?? 1;
     double percent = min(current / goal, 1);
 
@@ -251,7 +238,7 @@ class HabitCard extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         ClipRRect(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           child: LinearProgressIndicator(
             value: percent,
             minHeight: 8,
@@ -279,7 +266,7 @@ class HabitCard extends StatelessWidget {
       case 'MEDIBLE_NUMERICO':
         label = 'Añadir Progreso';
         onPressed = () {
-          // Aquí podrías abrir un diálogo personalizado
+          // Aquí podrías mostrar un modal de ingreso numérico
         };
         break;
       default:
@@ -291,14 +278,14 @@ class HabitCard extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
+          backgroundColor: accentColor.withOpacity(0.9),
           foregroundColor: Colors.white,
-          backgroundColor: accentColor.withOpacity(0.85),
-          elevation: 6,
-          shadowColor: accentColor.withOpacity(0.6),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           padding: const EdgeInsets.symmetric(vertical: 14),
+          elevation: 8,
+          shadowColor: accentColor.withOpacity(0.5),
         ),
         child: Text(
           label,

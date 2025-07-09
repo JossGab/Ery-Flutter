@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class MotivationalCard extends StatefulWidget {
   const MotivationalCard({super.key});
@@ -9,8 +10,7 @@ class MotivationalCard extends StatefulWidget {
   State<MotivationalCard> createState() => _MotivationalCardState();
 }
 
-class _MotivationalCardState extends State<MotivationalCard>
-    with SingleTickerProviderStateMixin {
+class _MotivationalCardState extends State<MotivationalCard> {
   static const List<String> _quotes = [
     "La disciplina es el puente entre las metas y los logros.",
     "El secreto del éxito es la constancia en el propósito.",
@@ -39,61 +39,78 @@ class _MotivationalCardState extends State<MotivationalCard>
   @override
   void initState() {
     super.initState();
-    _displayQuote = _quotes[Random().nextInt(_quotes.length)];
+    _displayQuote = _randomQuote();
+  }
+
+  String _randomQuote() {
+    return _quotes[Random().nextInt(_quotes.length)];
+  }
+
+  void _nextQuote() {
+    setState(() {
+      _displayQuote = _randomQuote();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withOpacity(0.2),
-                  shape: BoxShape.circle,
+    return GestureDetector(
+      onHorizontalDragEnd: (_) => _nextQuote(),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withOpacity(0.12)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
                 ),
-                padding: const EdgeInsets.all(10),
-                child: const Icon(
-                  Icons.format_quote_rounded,
-                  color: Color(0xFF818CF8),
-                  size: 26,
-                ),
-              ),
-              const SizedBox(height: 16),
-              AnimatedOpacity(
-                opacity: 1.0,
-                duration: const Duration(milliseconds: 700),
-                child: Text(
-                  _displayQuote,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontStyle: FontStyle.italic,
-                    fontWeight: FontWeight.w400,
-                    height: 1.6,
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF818CF8).withOpacity(0.25),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(14),
+                  child: const Icon(
+                    Icons.format_quote_rounded,
+                    color: Color(0xFF818CF8),
+                    size: 28,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Container(
+                      constraints: const BoxConstraints(maxWidth: 380),
+                      alignment: Alignment.center,
+                      child: Text(
+                        _displayQuote,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.w400,
+                          height: 1.6,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),

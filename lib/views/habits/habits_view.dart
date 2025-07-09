@@ -1,9 +1,3 @@
-/*
-================================================================================
- ARCHIVO: lib/views/habits/habits_view.dart (Versión Rediseñada)
- INSTRUCCIONES: Se agrupan los hábitos por tipo para una mejor organización.
-================================================================================
-*/
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -37,23 +31,21 @@ class HabitsView extends StatelessWidget {
             authProvider.isLoading && habits.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : habits.isEmpty
-                ? _buildEmptyState(context)
+                ? _buildEmptyState()
                 : CustomScrollView(
                   physics: const BouncingScrollPhysics(),
                   slivers: [
                     _buildHabitListSection(
-                      context,
                       goodHabits,
                       "Hábitos Positivos",
                       Icons.trending_up,
-                      Colors.green,
+                      Colors.greenAccent,
                     ),
                     _buildHabitListSection(
-                      context,
                       badHabits,
                       "Rompiendo Cadenas",
                       Icons.warning_amber_rounded,
-                      Colors.orange,
+                      Colors.orangeAccent,
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 100)),
                   ],
@@ -62,45 +54,26 @@ class HabitsView extends StatelessWidget {
     );
   }
 
-  Widget _buildHabitListSection(
-    BuildContext context,
+  SliverPadding _buildHabitListSection(
     List<Habit> habits,
     String title,
     IconData icon,
     Color iconColor,
   ) {
     if (habits.isEmpty) {
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
+      return const SliverPadding(
+        padding: EdgeInsets.zero,
+        sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
+      );
     }
 
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       sliver: SliverList(
         delegate: SliverChildListDelegate([
           _buildSectionHeader(title, icon, iconColor),
-          const SizedBox(height: 8),
-          ...habits.map(
-            (habit) => Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF25273A),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: AspectRatio(
-                  aspectRatio: 16 / 10,
-                  child: HabitCard(habit: habit),
-                ),
-              ),
-            ),
-          ),
+          const SizedBox(height: 12),
+          ...habits.map((habit) => HabitCard(habit: habit)),
         ]),
       ),
     );
@@ -108,7 +81,6 @@ class HabitsView extends StatelessWidget {
 
   Widget _buildSectionHeader(String title, IconData icon, Color iconColor) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Icon(icon, color: iconColor, size: 22),
         const SizedBox(width: 10),
@@ -124,16 +96,16 @@ class HabitsView extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState() {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+          children: const [
             Icon(Icons.flag_circle_outlined, size: 80, color: Colors.white24),
-            const SizedBox(height: 20),
-            const Text(
+            SizedBox(height: 20),
+            Text(
               '¡Es hora de empezar tu nueva rutina!',
               style: TextStyle(
                 fontSize: 20,
@@ -142,8 +114,8 @@ class HabitsView extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 10),
-            const Text(
+            SizedBox(height: 10),
+            Text(
               'Presiona el botón "+" para crear tu primer hábito y comenzar a construir tu mejor versión.',
               style: TextStyle(fontSize: 16, color: Colors.white38),
               textAlign: TextAlign.center,
@@ -162,12 +134,11 @@ class HabitsView extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) {
-        return ChangeNotifierProvider.value(
-          value: Provider.of<AuthProvider>(context, listen: false),
-          child: const CreateHabitModal(),
-        );
-      },
+      builder:
+          (_) => ChangeNotifierProvider.value(
+            value: Provider.of<AuthProvider>(context, listen: false),
+            child: const CreateHabitModal(),
+          ),
     );
   }
 }

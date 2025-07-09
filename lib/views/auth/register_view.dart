@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../providers/auth_provider.dart';
 
 class RegisterView extends StatefulWidget {
@@ -83,9 +85,8 @@ class _RegisterViewState extends State<RegisterView> {
         children: [
           Container(color: const Color(0xFF0E0F1A)),
 
-          // Capa borrosa de fondo
           BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(color: Colors.black.withOpacity(0.4)),
           ),
 
@@ -104,31 +105,37 @@ class _RegisterViewState extends State<RegisterView> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      const Text(
+                      Text(
                         "Crear una nueva cuenta",
-                        style: TextStyle(
+                        style: GoogleFonts.poppins(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
-                      ),
+                      ).animate().fade().slideY(),
+
                       const SizedBox(height: 8),
                       GestureDetector(
                         onTap: () => Navigator.pushNamed(context, '/login'),
-                        child: const Text.rich(
+                        child: Text.rich(
                           TextSpan(
                             text: "¿Ya tienes una cuenta? ",
-                            style: TextStyle(color: Colors.white60),
+                            style: GoogleFonts.poppins(color: Colors.white60),
                             children: [
                               TextSpan(
                                 text: "Inicia sesión aquí",
-                                style: TextStyle(color: Colors.blueAccent),
+                                style: GoogleFonts.poppins(
+                                  color: Colors.blueAccent,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ],
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 24),
+
                       ElevatedButton.icon(
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -144,94 +151,121 @@ class _RegisterViewState extends State<RegisterView> {
                           width: 20,
                           height: 20,
                         ),
-                        label: const Text("Registrarse con Google"),
+                        label: Text(
+                          "Registrarse con Google",
+                          style: GoogleFonts.poppins(),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey[800],
                           foregroundColor: Colors.white,
                           minimumSize: const Size.fromHeight(50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                      ),
+                      ).animate().fade().slideY(),
+
                       const SizedBox(height: 16),
-                      const Row(
+                      const Divider(color: Colors.white24),
+
+                      const SizedBox(height: 16),
+                      Row(
                         children: [
-                          Expanded(child: Divider(color: Colors.white24)),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8),
-                            child: Text(
-                              "O continuar con correo",
-                              style: TextStyle(color: Colors.white60),
+                          Expanded(
+                            child: _buildTextField("Nombre *", _nameController),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildTextField(
+                              "Apellido",
+                              _lastNameController,
                             ),
                           ),
-                          Expanded(child: Divider(color: Colors.white24)),
                         ],
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        "Correo Electrónico *",
+                        _emailController,
+                        keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          Expanded(child: _buildTextField("Nombre *", _nameController)),
-                          const SizedBox(width: 12),
-                          Expanded(child: _buildTextField("Apellido", _lastNameController)),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField("Correo Electrónico *", _emailController,
-                          keyboardType: TextInputType.emailAddress),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
                           Expanded(
-                            child: _buildTextField("Contraseña *", _passwordController,
-                                obscure: true),
+                            child: _buildTextField(
+                              "Contraseña *",
+                              _passwordController,
+                              obscure: true,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: _buildTextField("Confirmar Contraseña *",
-                                _confirmPasswordController,
-                                obscure: true),
+                            child: _buildTextField(
+                              "Confirmar Contraseña *",
+                              _confirmPasswordController,
+                              obscure: true,
+                            ),
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 24),
-                      const Align(
+                      Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          "Información Adicional (opcional)",
-                          style: TextStyle(color: Colors.white70),
+                          "Información adicional (opcional)",
+                          style: GoogleFonts.poppins(color: Colors.white70),
                         ),
                       ),
+
                       const SizedBox(height: 12),
                       _buildDatePicker(),
                       const SizedBox(height: 16),
-                      _buildTextField("Teléfono", _phoneController,
-                          keyboardType: TextInputType.phone),
+                      _buildTextField(
+                        "Teléfono",
+                        _phoneController,
+                        keyboardType: TextInputType.phone,
+                      ),
                       const SizedBox(height: 16),
                       _buildTextField("Dirección", _addressController),
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          Expanded(child: _buildTextField("Ciudad", _cityController)),
+                          Expanded(
+                            child: _buildTextField("Ciudad", _cityController),
+                          ),
                           const SizedBox(width: 12),
-                          Expanded(child: _buildTextField("País", _countryController)),
+                          Expanded(
+                            child: _buildTextField("País", _countryController),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 32),
+
                       _isLoading
                           ? const Center(child: CircularProgressIndicator())
                           : ElevatedButton(
-                              onPressed: _submit,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF2563EB),
-                                minimumSize: const Size.fromHeight(50),
-                              ),
-                              child: const Text(
-                                "Registrarse",
-                                style: TextStyle(color: Colors.white),
+                            onPressed: _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2563EB),
+                              minimumSize: const Size.fromHeight(50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
+                            child: Text(
+                              "Registrarse",
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ).animate().fade().slideY(),
                     ],
                   ),
                 ),
-              ),
+              ).animate().fade().slideY(begin: 0.3),
             ),
           ),
         ],
@@ -249,28 +283,28 @@ class _RegisterViewState extends State<RegisterView> {
       controller: controller,
       obscureText: obscure,
       keyboardType: keyboardType,
-      style: const TextStyle(color: Colors.white),
+      style: GoogleFonts.poppins(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
+        labelStyle: GoogleFonts.poppins(color: Colors.white70),
         filled: true,
         fillColor: Colors.white10,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderSide: const BorderSide(color: Colors.white24),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
         ),
         focusedBorder: OutlineInputBorder(
           borderSide: const BorderSide(color: Colors.blueAccent),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
         ),
         errorBorder: OutlineInputBorder(
           borderSide: const BorderSide(color: Colors.redAccent),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderSide: const BorderSide(color: Colors.redAccent, width: 2),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
       validator: (value) {
@@ -280,7 +314,9 @@ class _RegisterViewState extends State<RegisterView> {
         if (label.contains('Correo') && value != null && !value.contains('@')) {
           return 'Email no válido.';
         }
-        if (label.contains('Contraseña *') && value != null && value.length < 8) {
+        if (label.contains('Contraseña *') &&
+            value != null &&
+            value.length < 8) {
           return 'Mínimo 8 caracteres.';
         }
         if (label.contains('Confirmar') && value != _passwordController.text) {
@@ -323,7 +359,7 @@ class _RegisterViewState extends State<RegisterView> {
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
           color: Colors.white10,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.white24),
         ),
         child: Row(
@@ -332,7 +368,7 @@ class _RegisterViewState extends State<RegisterView> {
               _birthDate == null
                   ? 'Fecha de nacimiento'
                   : '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year}',
-              style: const TextStyle(color: Colors.white70),
+              style: GoogleFonts.poppins(color: Colors.white70),
             ),
             const Spacer(),
             const Icon(Icons.calendar_today, size: 16, color: Colors.white70),

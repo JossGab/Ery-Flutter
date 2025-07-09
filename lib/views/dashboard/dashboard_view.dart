@@ -1,8 +1,4 @@
-/*
-================================================================================
- ARCHIVO: lib/views/dashboard/dashboard_view.dart (Versión Completa y Mejorada)
-================================================================================
-*/
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -60,20 +56,12 @@ class _DashboardViewState extends State<DashboardView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 24),
-
-                    // Saludo
                     _buildWelcomeHeader(user),
                     const SizedBox(height: 24),
-
-                    // Motivación
                     const MotivationalCard(),
                     const SizedBox(height: 32),
-
-                    // Progreso del día
                     HabitProgressSection(habits: authProvider.habits),
                     const SizedBox(height: 36),
-
-                    // Mejores hábitos
                     const Text(
                       "Top Hábitos",
                       style: TextStyle(
@@ -86,8 +74,6 @@ class _DashboardViewState extends State<DashboardView> {
                     const SizedBox(height: 12),
                     TopHabitsSection(habits: authProvider.habits),
                     const SizedBox(height: 36),
-
-                    // Estadísticas generales
                     const Text(
                       "Resumen General",
                       style: TextStyle(
@@ -100,8 +86,6 @@ class _DashboardViewState extends State<DashboardView> {
                     const SizedBox(height: 16),
                     _buildStatsGrid(context, authProvider),
                     const SizedBox(height: 36),
-
-                    // Calendario de actividad
                     const Text(
                       "Calendario de Actividad",
                       style: TextStyle(
@@ -183,8 +167,74 @@ class _DashboardViewState extends State<DashboardView> {
   }) {
     return SizedBox(
       width: (MediaQuery.of(context).size.width / 2) - 28,
-      height: 110,
-      child: StatCard(icon: icon, title: title, value: value),
+      height: 120,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.08)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.blueAccent.withOpacity(0.3),
+                        Colors.indigo.withOpacity(0.3),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: Colors.blueAccent, size: 30),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.visible,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        value,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

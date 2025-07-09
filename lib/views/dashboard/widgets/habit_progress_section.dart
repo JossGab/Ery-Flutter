@@ -1,12 +1,7 @@
-/*
-================================================================================
- ARCHIVO: lib/views/dashboard/widgets/habit_progress_section.dart (Rediseñado)
- INSTRUCCIONES: Reemplaza tu archivo con este.
- Concepto: "Enfoque del Día" - Tarjetas interactivas para completar hábitos.
-================================================================================
-*/
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../models/habit_model.dart';
 import '../../../providers/auth_provider.dart';
 
@@ -58,34 +53,32 @@ class HabitProgressSection extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white12),
+          color: Colors.white.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white10),
         ),
-        child: const Center(
-          child: Text(
-            'Crea tu primer hábito para empezar a registrar tu progreso aquí.',
-            style: TextStyle(color: Colors.white60),
-            textAlign: TextAlign.center,
-          ),
-        ),
+        child: Text(
+          'Crea tu primer hábito para empezar a registrar tu progreso aquí.',
+          style: GoogleFonts.poppins(color: Colors.white60),
+          textAlign: TextAlign.center,
+        ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.1),
       );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Enfoque del Día",
-          style: TextStyle(
+        Text(
+          "✨ Enfoque del Día",
+          style: GoogleFonts.poppins(
             color: Colors.white,
             fontSize: 20,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
           ),
-        ),
+        ).animate().fadeIn(duration: 500.ms).slideY(begin: -0.2),
         const SizedBox(height: 16),
         SizedBox(
-          height: 150,
+          height: 160,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: habits.length,
@@ -95,7 +88,7 @@ class HabitProgressSection extends StatelessWidget {
               return _HabitActionCard(
                 habit: habit,
                 onLog: (payload) => _logProgress(context, habit, payload),
-              );
+              ).animate().fadeIn(duration: 500.ms).slideX(begin: 0.2);
             },
           ),
         ),
@@ -134,7 +127,7 @@ class _HabitActionCard extends StatelessWidget {
           children: [
             Text(
               habit.nombre,
-              style: const TextStyle(
+              style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
@@ -156,21 +149,21 @@ class _HabitActionCard extends StatelessWidget {
           onPressed: () => onLog({'valor_booleano': true}),
           icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
           label: const Text("Hecho"),
-          style: _buttonStyle(const Color(0xFF34D399)), // verde suave
+          style: _buttonStyle(const Color(0xFF34D399)),
         );
       case 'MAL_HABITO':
         return ElevatedButton.icon(
           onPressed: () => onLog({'es_recaida': true}),
           icon: const Icon(Icons.warning_amber_rounded, size: 18),
           label: const Text("Recaída"),
-          style: _buttonStyle(const Color(0xFFFBBF24)), // amarillo suave
+          style: _buttonStyle(const Color(0xFFFBBF24)),
         );
       case 'MEDIBLE_NUMERICO':
         return ElevatedButton.icon(
           onPressed: () => _showNumericInputDialog(context),
           icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
           label: const Text("Registrar"),
-          style: _buttonStyle(const Color(0xFF60A5FA)), // azul suave
+          style: _buttonStyle(const Color(0xFF60A5FA)),
         );
       default:
         return const SizedBox.shrink();
@@ -183,7 +176,7 @@ class _HabitActionCard extends StatelessWidget {
       foregroundColor: color,
       minimumSize: const Size.fromHeight(40),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      textStyle: const TextStyle(fontWeight: FontWeight.w600),
+      textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
     );
   }
 
@@ -199,7 +192,7 @@ class _HabitActionCard extends StatelessWidget {
             ),
             title: Text(
               'Registrar ${habit.nombre}',
-              style: const TextStyle(color: Colors.white),
+              style: GoogleFonts.poppins(color: Colors.white),
             ),
             content: TextField(
               controller: controller,

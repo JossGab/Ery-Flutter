@@ -1,6 +1,10 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
 import '../../providers/competitions_provider.dart';
 
 class CreateCompetitionView extends StatefulWidget {
@@ -22,7 +26,6 @@ class _CreateCompetitionViewState extends State<CreateCompetitionView> {
   DateTime? _endDate;
   bool _isLoading = false;
 
-  // Mapa para las opciones del dropdown
   final Map<String, String> _goalTypes = {
     'MAX_HABITOS_DIA': 'Máximo hábitos por día',
     'MAX_RACHA': 'Racha más larga',
@@ -38,14 +41,12 @@ class _CreateCompetitionViewState extends State<CreateCompetitionView> {
     super.dispose();
   }
 
-  // Función para abrir el selector de fechas
   Future<void> _pickDate(
     BuildContext context, {
     required bool isStartDate,
   }) async {
     final now = DateTime.now();
     final initialDate = isStartDate ? _startDate : _endDate;
-    // La primera fecha seleccionable es hoy para el inicio, o la fecha de inicio para el fin.
     final firstDate = isStartDate ? now : (_startDate ?? now);
 
     final pickedDate = await showDatePicker(
@@ -53,13 +54,26 @@ class _CreateCompetitionViewState extends State<CreateCompetitionView> {
       initialDate: initialDate ?? now,
       firstDate: firstDate,
       lastDate: DateTime(now.year + 5),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Colors.blueAccent,
+              onPrimary: Colors.white,
+              surface: Color(0xFF1B1D2A),
+              onSurface: Colors.white,
+            ),
+            dialogBackgroundColor: const Color(0xFF0E0F1A),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (pickedDate != null) {
       setState(() {
         if (isStartDate) {
           _startDate = pickedDate;
-          // Si la fecha de fin es anterior a la nueva de inicio, la reseteamos.
           if (_endDate != null && _endDate!.isBefore(_startDate!)) {
             _endDate = null;
           }
@@ -70,7 +84,6 @@ class _CreateCompetitionViewState extends State<CreateCompetitionView> {
     }
   }
 
-  // Función para enviar el formulario a la API
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
     if (_isLoading) return;
@@ -84,20 +97,10 @@ class _CreateCompetitionViewState extends State<CreateCompetitionView> {
       'nombre': _nameController.text.trim(),
       'descripcion': _descriptionController.text.trim(),
       'tipo_meta': _selectedGoalType,
-
-      // --- CORRECCIÓN: Enviamos ambos campos como lo espera la API ---
       'meta_objetivo': goalValue,
       'valor': valuePerPoint,
-
-      // --- FIN DE LA CORRECCIÓN ---
-      'fecha_inicio': _startDate!.toIso8601String().substring(
-        0,
-        10,
-      ), // Formato YYYY-MM-DD
-      'fecha_fin': _endDate!.toIso8601String().substring(
-        0,
-        10,
-      ), // Formato YYYY-MM-DD
+      'fecha_inicio': _startDate!.toIso8601String().substring(0, 10),
+      'fecha_fin': _endDate!.toIso8601String().substring(0, 10),
     };
 
     final provider = context.read<CompetitionsProvider>();
@@ -132,150 +135,252 @@ class _CreateCompetitionViewState extends State<CreateCompetitionView> {
     return Scaffold(
       backgroundColor: const Color(0xFF0E0F1A),
       appBar: AppBar(
-        title: const Text('Crear Nueva Competencia'),
-        backgroundColor: const Color(0xFF1B1D2A),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nombre de la competencia',
-              ),
-              validator:
-                  (v) => (v == null || v.isEmpty) ? 'Campo requerido' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(labelText: 'Descripción'),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _selectedGoalType,
-              hint: const Text('Tipo de Meta'),
-              items:
-                  _goalTypes.entries.map((entry) {
-                    return DropdownMenuItem(
-                      value: entry.key,
-                      child: Text(entry.value),
-                    );
-                  }).toList(),
-              onChanged: (v) => setState(() => _selectedGoalType = v),
-              validator:
-                  (v) => (v == null) ? 'Selecciona un tipo de meta' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _goalController,
-              decoration: const InputDecoration(
-                labelText: 'Meta a alcanzar (ej. 100)',
-                helperText: 'Número de días de racha, total de hábitos, etc.',
-              ),
-              keyboardType: TextInputType.number,
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'Campo requerido';
-                if (int.tryParse(v) == null || int.parse(v) <= 0) {
-                  return 'Debe ser un número entero y positivo';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // --- CAMPO AÑADIDO Y CORREGIDO ---
-            TextFormField(
-              controller: _valueController,
-              decoration: const InputDecoration(
-                labelText: 'Valor por Punto (ej. 1.0)',
-                helperText: 'Puntos otorgados por cada unidad de progreso.',
-              ),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'Campo requerido';
-                if (double.tryParse(v) == null || double.parse(v) <= 0) {
-                  return 'Debe ser un número mayor a 0';
-                }
-                return null;
-              },
-            ),
-
-            // --- FIN DEL CAMPO AÑADIDO ---
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildDatePickerField(
-                    label: 'Fecha de Inicio',
-                    date: _startDate,
-                    onTap: () => _pickDate(context, isStartDate: true),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildDatePickerField(
-                    label: 'Fecha de Fin',
-                    date: _endDate,
-                    onTap: () => _pickDate(context, isStartDate: false),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed:
-                  (_isLoading || _startDate == null || _endDate == null)
-                      ? null
-                      : _submitForm,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child:
-                  _isLoading
-                      ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          color: Colors.white,
-                        ),
-                      )
-                      : const Text('Crear Competencia'),
-            ),
-          ],
+        backgroundColor: Colors.transparent,
+        title: Text(
+          'Crear Competencia',
+          style: GoogleFonts.poppins(color: Colors.white),
         ),
+        centerTitle: true,
+        elevation: 0,
+      ),
+      body: Stack(
+        children: [
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(color: Colors.black.withOpacity(0.4)),
+          ),
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 600),
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      _buildEnhancedField(
+                        controller: _nameController,
+                        label: 'Nombre de la competencia',
+                        maxLength: 50,
+                        hint: 'Ej: Reto 30 días sin azúcar',
+                      ),
+                      const SizedBox(height: 16),
+                      _buildField(
+                        controller: _descriptionController,
+                        label: 'Descripción',
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: _selectedGoalType,
+                        decoration: _inputDecoration('Tipo de Meta'),
+                        style: GoogleFonts.poppins(color: Colors.white),
+                        dropdownColor: const Color(0xFF1B1D2A),
+                        iconEnabledColor: Colors.white70,
+                        items:
+                            _goalTypes.entries
+                                .map(
+                                  (entry) => DropdownMenuItem(
+                                    value: entry.key,
+                                    child: Text(
+                                      entry.value,
+                                      style: GoogleFonts.poppins(),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (v) => setState(() => _selectedGoalType = v),
+                        validator:
+                            (v) =>
+                                v == null ? 'Selecciona un tipo de meta' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildField(
+                        controller: _goalController,
+                        label: 'Meta a alcanzar',
+                        helper: 'Ej: 100 hábitos o días',
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildField(
+                        controller: _valueController,
+                        label: 'Valor por punto',
+                        helper: 'Ej: 1.0',
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDatePickerField(
+                              label: 'Fecha de inicio',
+                              date: _startDate,
+                              onTap:
+                                  () => _pickDate(context, isStartDate: true),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildDatePickerField(
+                              label: 'Fecha de fin',
+                              date: _endDate,
+                              onTap:
+                                  () => _pickDate(context, isStartDate: false),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                      _isLoading
+                          ? const CircularProgressIndicator()
+                          : ElevatedButton.icon(
+                            onPressed:
+                                (_startDate == null || _endDate == null)
+                                    ? null
+                                    : _submitForm,
+                            icon: const Icon(Icons.check),
+                            label: Text(
+                              'Crear Competencia',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(50),
+                              backgroundColor: Colors.indigo,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ).animate().fade().slideY(),
+                    ],
+                  ),
+                ),
+              ).animate().fade().slideY(begin: 0.2),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // Widget de ayuda para construir los campos de fecha
+  Widget _buildEnhancedField({
+    required TextEditingController controller,
+    required String label,
+    required int maxLength,
+    String? hint,
+  }) {
+    return AnimatedContainer(
+      duration: 500.ms,
+      curve: Curves.easeOutCubic,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        maxLength: maxLength,
+        style: GoogleFonts.poppins(
+          color: Colors.white,
+          fontWeight: FontWeight.w500,
+        ),
+        decoration: InputDecoration(
+          counterStyle: GoogleFonts.poppins(
+            color: Colors.white38,
+            fontSize: 12,
+          ),
+          labelText: label,
+          labelStyle: GoogleFonts.poppins(color: Colors.white70),
+          border: InputBorder.none,
+          hintText: hint,
+          hintStyle: GoogleFonts.poppins(color: Colors.white30),
+        ),
+        validator:
+            (v) => v == null || v.trim().isEmpty ? 'Campo obligatorio' : null,
+      ),
+    ).animate().fade(duration: 500.ms).slideY(begin: 0.3);
+  }
+
+  Widget _buildField({
+    required TextEditingController controller,
+    required String label,
+    String? helper,
+    int maxLines = 1,
+    TextInputType? keyboardType,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      style: GoogleFonts.poppins(color: Colors.white),
+      decoration: _inputDecoration(label, helperText: helper),
+      validator: (v) {
+        if (label.contains('*') && (v == null || v.isEmpty)) {
+          return 'Campo obligatorio';
+        }
+        if (label.contains('Meta') &&
+            (v == null || int.tryParse(v) == null || int.parse(v) <= 0)) {
+          return 'Debe ser un número positivo';
+        }
+        if (label.contains('Valor') &&
+            (v == null || double.tryParse(v) == null || double.parse(v) <= 0)) {
+          return 'Debe ser un número mayor a 0';
+        }
+        return null;
+      },
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, {String? helperText}) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: GoogleFonts.poppins(color: Colors.white70),
+      helperText: helperText,
+      helperStyle: GoogleFonts.poppins(color: Colors.white38),
+      filled: true,
+      fillColor: Colors.white10,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Colors.white24),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Colors.blueAccent),
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
   Widget _buildDatePickerField({
     required String label,
     required DateTime? date,
     required VoidCallback onTap,
   }) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
       child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 16,
-          ),
-        ),
+        decoration: _inputDecoration(label),
         child: Text(
           date != null ? DateFormat('dd/MM/yyyy').format(date) : 'Seleccionar',
-          style: TextStyle(
+          style: GoogleFonts.poppins(
             color: date != null ? Colors.white : Colors.white54,
-            fontSize: 16,
           ),
         ),
       ),

@@ -1,5 +1,3 @@
-// lib/views/routines/routines_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/routines_provider.dart';
@@ -17,24 +15,20 @@ class _RoutinesViewState extends State<RoutinesView> {
   @override
   void initState() {
     super.initState();
-    // Le decimos al provider que cargue la lista de rutinas al abrir la pantalla.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<RoutinesProvider>().fetchRoutines();
     });
   }
 
-  // --- MÉTODO ACTUALIZADO ---
   void _showCreateRoutineModal() {
-    // Usamos showModalBottomSheet para mostrar el formulario desde abajo
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Permite que el modal se ajuste al teclado
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const CreateRoutineModal(),
     );
   }
 
-  // --- MÉTODO ACTUALIZADO ---
   void _navigateToRoutineDetails(int routineId) {
     Navigator.push(
       context,
@@ -56,12 +50,10 @@ class _RoutinesViewState extends State<RoutinesView> {
       ),
       body: Consumer<RoutinesProvider>(
         builder: (context, provider, child) {
-          // Caso 1: Cargando
           if (provider.isLoadingList) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Caso 2: Error
           if (provider.error != null) {
             return Center(
               child: Text(
@@ -71,7 +63,6 @@ class _RoutinesViewState extends State<RoutinesView> {
             );
           }
 
-          // Caso 3: Lista vacía
           if (provider.routines.isEmpty) {
             return const Center(
               child: Padding(
@@ -85,16 +76,10 @@ class _RoutinesViewState extends State<RoutinesView> {
             );
           }
 
-          // Caso 4: Mostrar la lista de rutinas
           return RefreshIndicator(
             onRefresh: () => provider.fetchRoutines(),
             child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                80,
-              ), // Padding inferior para el FAB
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
               itemCount: provider.routines.length,
               itemBuilder: (context, index) {
                 final routine = provider.routines[index];
@@ -111,22 +96,21 @@ class _RoutinesViewState extends State<RoutinesView> {
   }
 }
 
-// --- WIDGET INTERNO PARA LA TARJETA DE RUTINA ---
-// Lo mantenemos aquí por ahora, pero podría moverse a /widgets/ si se reutiliza.
-// --- WIDGET ACTUALIZADO PARA LA TARJETA DE RUTINA ---
 class _RoutineCard extends StatelessWidget {
   final Routine routine;
   final VoidCallback onTap;
 
   const _RoutineCard({required this.routine, required this.onTap});
 
-  // Método para mostrar el diálogo de confirmación
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           backgroundColor: const Color(0xFF1F2937),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             'Confirmar Eliminación',
             style: TextStyle(color: Colors.white),
@@ -141,9 +125,7 @@ class _RoutineCard extends StatelessWidget {
                 'Cancelar',
                 style: TextStyle(color: Colors.white60),
               ),
-              onPressed: () {
-                Navigator.of(dialogContext).pop(); // Cierra el diálogo
-              },
+              onPressed: () => Navigator.of(dialogContext).pop(),
             ),
             TextButton(
               style: TextButton.styleFrom(backgroundColor: Colors.redAccent),
@@ -152,9 +134,8 @@ class _RoutineCard extends StatelessWidget {
                 style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
-                // Llama al provider para eliminar la rutina
                 context.read<RoutinesProvider>().deleteRoutine(routine.id);
-                Navigator.of(dialogContext).pop(); // Cierra el diálogo
+                Navigator.of(dialogContext).pop();
               },
             ),
           ],
@@ -165,28 +146,38 @@ class _RoutineCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.only(bottom: 12),
-      color: const Color(0xFF1B1D2A),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        splashColor: Colors.blueAccent.withOpacity(0.2),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Icon(
                 Icons.all_inclusive_rounded,
                 color: Colors.blueAccent,
                 size: 30,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       routine.nombre,
@@ -210,7 +201,6 @@ class _RoutineCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // --- AÑADIDO: Botón para eliminar ---
               IconButton(
                 icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                 onPressed: () => _showDeleteConfirmation(context),

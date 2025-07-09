@@ -34,6 +34,12 @@ dependencies:
   http: ^1.4.0
   flutter_secure_storage: ^9.0.0
   provider: ^6.1.2
+  google_fonts: ^6.1.0 
+  blur: ^3.1.0     
+  flutter_animate: ^4.3.0 
+  animated_text_kit: ^4.2.2   
+  animations: ^2.0.11 
+  iconsax: ^0.0.8            
 
   jwt_decoder: ^2.0.1
 

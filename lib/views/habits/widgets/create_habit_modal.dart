@@ -1,13 +1,7 @@
-/*
-================================================================================
- ARCHIVO: lib/views/habits/widgets/create_habit_modal.dart (Versión Final y Robusta)
- INSTRUCCIONES: Se reemplaza AnimatedVisibility por un `if` para máxima compatibilidad.
-================================================================================
-*/
+// lib/views/habits/widgets/create_habit_modal.dart
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../../../providers/auth_provider.dart';
 
 class CreateHabitModal extends StatefulWidget {
@@ -84,9 +78,9 @@ class _CreateHabitModalState extends State<CreateHabitModal> {
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.06),
+            color: Colors.white.withOpacity(0.07),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            border: Border.all(color: Colors.white.withOpacity(0.15)),
           ),
           child: SingleChildScrollView(
             child: Padding(
@@ -99,7 +93,6 @@ class _CreateHabitModalState extends State<CreateHabitModal> {
               child: Form(
                 key: _formKey,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Center(
@@ -108,8 +101,8 @@ class _CreateHabitModalState extends State<CreateHabitModal> {
                         style: Theme.of(
                           context,
                         ).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
                           color: Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
@@ -133,12 +126,11 @@ class _CreateHabitModalState extends State<CreateHabitModal> {
                     ),
                     const SizedBox(height: 24),
                     const Text(
-                      'Elige el tipo de hábito',
+                      'Tipo de hábito',
                       style: TextStyle(color: Colors.white70, fontSize: 16),
                     ),
                     const SizedBox(height: 12),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _HabitTypeCard(
                           title: 'Sí / No',
@@ -176,8 +168,7 @@ class _CreateHabitModalState extends State<CreateHabitModal> {
                             decimal: true,
                           ),
                           validator: (v) {
-                            if (_selectedType == 'MEDIBLE_NUMERICO' &&
-                                (v == null || v.isEmpty)) {
+                            if (v == null || v.trim().isEmpty) {
                               return 'La meta es obligatoria';
                             }
                             return null;
@@ -236,7 +227,7 @@ class _CreateHabitModalState extends State<CreateHabitModal> {
         prefixIcon: Icon(icon, color: Colors.white60),
         labelStyle: const TextStyle(color: Colors.white70),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.04),
+        fillColor: Colors.white.withOpacity(0.05),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -274,8 +265,8 @@ class _HabitTypeCard extends StatelessWidget {
           decoration: BoxDecoration(
             color:
                 isSelected
-                    ? primary.withOpacity(0.2)
-                    : Colors.white.withOpacity(0.03),
+                    ? primary.withOpacity(0.15)
+                    : Colors.white.withOpacity(0.025),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected ? primary : Colors.white30,
@@ -285,7 +276,7 @@ class _HabitTypeCard extends StatelessWidget {
                 isSelected
                     ? [
                       BoxShadow(
-                        color: primary.withOpacity(0.4),
+                        color: primary.withOpacity(0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -297,8 +288,8 @@ class _HabitTypeCard extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: isSelected ? primary : Colors.white70,
-                size: 30,
+                size: 28,
+                color: isSelected ? primary : Colors.white60,
               ),
               const SizedBox(height: 6),
               Text(

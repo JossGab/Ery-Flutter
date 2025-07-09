@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
 import '../../providers/competitions_provider.dart';
 import 'create_competition_view.dart';
 import 'competition_detail_view.dart';
@@ -15,7 +18,6 @@ class _CompetitionsViewState extends State<CompetitionsView> {
   @override
   void initState() {
     super.initState();
-    // Llama al provider para cargar los datos cuando la vista se construye
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CompetitionsProvider>().fetchMyCompetitions();
     });
@@ -26,7 +28,6 @@ class _CompetitionsViewState extends State<CompetitionsView> {
       context,
       MaterialPageRoute(builder: (_) => const CreateCompetitionView()),
     ).then((_) {
-      // Refresca la lista cuando volvemos de la pantalla de creación
       context.read<CompetitionsProvider>().fetchMyCompetitions();
     });
   }
@@ -43,10 +44,10 @@ class _CompetitionsViewState extends State<CompetitionsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFF0E0F1A),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _navigateToCreateCompetition,
-        label: const Text('Crear Competencia'),
+        label: Text("Crear Competencia", style: GoogleFonts.poppins()),
         icon: const Icon(Icons.add),
         backgroundColor: Colors.indigo,
       ),
@@ -60,19 +61,22 @@ class _CompetitionsViewState extends State<CompetitionsView> {
             return Center(
               child: Text(
                 'Error: ${provider.error}',
-                style: const TextStyle(color: Colors.red),
+                style: GoogleFonts.poppins(color: Colors.red),
               ),
             );
           }
 
           if (provider.myCompetitions.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(24.0),
                 child: Text(
                   'Aún no participas en ninguna competencia.\n¡Crea una para empezar!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                  style: GoogleFonts.poppins(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             );
@@ -83,14 +87,14 @@ class _CompetitionsViewState extends State<CompetitionsView> {
             color: Colors.white,
             backgroundColor: Colors.indigo,
             child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
               itemCount: provider.myCompetitions.length,
               itemBuilder: (context, index) {
                 final competition = provider.myCompetitions[index];
                 return _CompetitionCard(
                   competition: competition,
                   onTap: () => _navigateToCompetitionDetails(competition['id']),
-                );
+                ).animate().fade().slideY(begin: 0.2, duration: 400.ms);
               },
             ),
           );
@@ -100,7 +104,6 @@ class _CompetitionsViewState extends State<CompetitionsView> {
   }
 }
 
-// --- WIDGET DE LA TARJETA CORREGIDO ---
 class _CompetitionCard extends StatelessWidget {
   final Map<String, dynamic> competition;
   final VoidCallback onTap;
@@ -108,7 +111,6 @@ class _CompetitionCard extends StatelessWidget {
   const _CompetitionCard({required this.competition, required this.onTap});
 
   Widget _buildStatusChip() {
-    // CORRECCIÓN: Usamos la clave "status" que viene de la API
     final status =
         competition['status']?.toString().toLowerCase() ?? 'desconocido';
     Color chipColor;
@@ -116,45 +118,51 @@ class _CompetitionCard extends StatelessWidget {
 
     switch (status) {
       case 'activa':
-        chipColor = Colors.green.withOpacity(0.3);
+        chipColor = Colors.green.withOpacity(0.2);
         statusText = 'Activa';
         break;
       case 'finalizada':
-        chipColor = Colors.grey.withOpacity(0.3);
+        chipColor = Colors.grey.withOpacity(0.2);
         statusText = 'Finalizada';
         break;
       case 'cancelada':
-        chipColor = Colors.red.withOpacity(0.3);
+        chipColor = Colors.red.withOpacity(0.2);
         statusText = 'Cancelada';
         break;
       default:
-        chipColor = Colors.grey.withOpacity(0.3);
+        chipColor = Colors.grey.withOpacity(0.2);
         statusText = status.capitalize();
     }
 
-    return Chip(
-      label: Text(
-        statusText,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: chipColor,
+        borderRadius: BorderRadius.circular(12),
       ),
-      backgroundColor: chipColor,
-      side: BorderSide.none,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Text(
+        statusText,
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+        overflow: TextOverflow.ellipsis,
+        softWrap: false,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: const Color(0xFF1B1D2A),
+      color: Colors.white.withOpacity(0.05),
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -162,27 +170,27 @@ class _CompetitionCard extends StatelessWidget {
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Text(
-                      // CORRECCIÓN: Usar 'name'
                       competition['name'] ?? 'Competencia sin nombre',
-                      style: const TextStyle(
+                      style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
+                      softWrap: true,
+                      maxLines: 3,
                     ),
                   ),
+                  const SizedBox(width: 12),
                   _buildStatusChip(),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
-                // CORRECCIÓN: Usar 'description'
                 competition['description'] ?? 'Sin descripción.',
-                style: const TextStyle(color: Colors.white70),
+                style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -199,9 +207,8 @@ class _CompetitionCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        // CORRECCIÓN: Usar 'participant_count'
                         '${competition['participant_count'] ?? 0} Participantes',
-                        style: const TextStyle(color: Colors.white54),
+                        style: GoogleFonts.poppins(color: Colors.white60),
                       ),
                     ],
                   ),
@@ -216,7 +223,6 @@ class _CompetitionCard extends StatelessWidget {
   }
 }
 
-// Pequeña extensión para capitalizar la primera letra (opcional pero útil)
 extension StringExtension on String {
   String capitalize() {
     if (isEmpty) return "";

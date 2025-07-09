@@ -1,13 +1,6 @@
-/*
-================================================================================
- ARCHIVO: lib/views/dashboard/widgets/dashboard_calendar.dart
- INSTRUCCIONES: Reemplaza el contenido de este archivo.
- Esta versión utiliza el ApiService centralizado en lugar de http.get
-================================================================================
-*/
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'dart:developer' as developer;
+import 'package:google_fonts/google_fonts.dart';
 import '../../../services/api_service.dart';
 
 class DailyActivity {
@@ -32,7 +25,6 @@ class DashboardCalendar extends StatefulWidget {
 }
 
 class _DashboardCalendarState extends State<DashboardCalendar> {
-  late final ValueNotifier<List<DailyActivity>> _selectedEvents;
   Map<DateTime, DailyActivity> _activityData = {};
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -46,18 +38,10 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
-    _selectedEvents = ValueNotifier(_getEventsForDay(_selectedDay!));
     _fetchActivityData(_focusedDay.year, _focusedDay.month);
   }
 
-  @override
-  void dispose() {
-    _selectedEvents.dispose();
-    super.dispose();
-  }
-
   Future<void> _fetchActivityData(int year, int month) async {
-    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _error = null;
@@ -65,37 +49,18 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
 
     try {
       final data = await _apiService.getActivityLog(year, month);
-
-      final Map<DateTime, DailyActivity> fetched = {};
+      final fetched = <DateTime, DailyActivity>{};
       data.forEach((key, value) {
         final date = DateTime.parse(key);
         fetched[date] = DailyActivity.fromJson(value);
       });
 
-      if (mounted) {
-        setState(() {
-          _activityData = fetched;
-        });
-      }
+      setState(() => _activityData = fetched);
     } catch (e) {
-      developer.log('Error en Calendar', name: 'EryApp.Calendar', error: e);
-      if (mounted) {
-        setState(() {
-          _error = e.toString().replaceFirst("Exception: ", "");
-        });
-      }
+      setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() => _isLoading = false);
     }
-  }
-
-  List<DailyActivity> _getEventsForDay(DateTime day) {
-    final act = _activityData[DateTime(day.year, day.month, day.day)];
-    return act != null ? [act] : [];
   }
 
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
@@ -104,56 +69,46 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
         _selectedDay = selectedDay;
         _focusedDay = focusedDay;
       });
-      _selectedEvents.value = _getEventsForDay(selectedDay);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
-        color: const Color(0xFF1f2937),
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1B1D2A), Color(0xFF111827)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        borderRadius: BorderRadius.circular(24),
+        color: Colors.white.withOpacity(0.06),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.4),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          const Text(
-            '📆 Calendario de Actividad',
-            style: TextStyle(
-              color: Colors.white,
+          Text(
+            '📅 Calendario de Actividad',
+            style: GoogleFonts.poppins(
               fontSize: 22,
               fontWeight: FontWeight.w600,
+              color: Colors.white,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: Center(child: CircularProgressIndicator()),
-            )
+            const CircularProgressIndicator(color: Colors.white)
           else if (_error != null)
-            Center(
-              child: Text(
-                'Error: $_error',
-                style: const TextStyle(color: Colors.red, fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
+            Text(
+              'Error: $_error',
+              style: GoogleFonts.poppins(color: Colors.red, fontSize: 14),
+              textAlign: TextAlign.center,
             )
           else
-            _buildCalendar(),
+            SizedBox(height: 420, child: _buildCalendar()),
         ],
       ),
     );
@@ -168,32 +123,36 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
       selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
       onDaySelected: _onDaySelected,
       calendarFormat: _calendarFormat,
-      onFormatChanged: (format) {
-        setState(() => _calendarFormat = format);
-      },
+      onFormatChanged: (format) => setState(() => _calendarFormat = format),
       onPageChanged: (focusedDay) {
         _focusedDay = focusedDay;
         _fetchActivityData(focusedDay.year, focusedDay.month);
       },
-      calendarStyle: const CalendarStyle(
+      sixWeekMonthsEnforced: true,
+      rowHeight: 52,
+      calendarStyle: CalendarStyle(
         outsideDaysVisible: false,
-        weekendTextStyle: TextStyle(color: Color(0xFF9ca3af)),
-        todayDecoration: BoxDecoration(
+        weekendTextStyle: GoogleFonts.poppins(color: const Color(0xFF9ca3af)),
+        todayDecoration: const BoxDecoration(
           color: Color(0xFF374151),
           shape: BoxShape.circle,
         ),
-        selectedDecoration: BoxDecoration(
+        selectedDecoration: const BoxDecoration(
           color: Color(0xFF6366F1),
           shape: BoxShape.circle,
         ),
-        defaultTextStyle: TextStyle(color: Colors.white),
+        defaultTextStyle: GoogleFonts.poppins(color: Colors.white),
       ),
-      headerStyle: const HeaderStyle(
+      headerStyle: HeaderStyle(
         formatButtonVisible: false,
         titleCentered: true,
-        titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
-        leftChevronIcon: Icon(Icons.chevron_left, color: Colors.white),
-        rightChevronIcon: Icon(Icons.chevron_right, color: Colors.white),
+        titleTextStyle: GoogleFonts.poppins(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+        leftChevronIcon: const Icon(Icons.chevron_left, color: Colors.white),
+        rightChevronIcon: const Icon(Icons.chevron_right, color: Colors.white),
       ),
       calendarBuilders: CalendarBuilders(
         markerBuilder: (context, date, events) {
@@ -206,7 +165,7 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
           }
           return null;
         },
-        defaultBuilder: (context, day, focusedDay) {
+        defaultBuilder: (context, day, _) {
           final activity =
               _activityData[DateTime(day.year, day.month, day.day)];
           if (activity != null && activity.completions > 0) {
@@ -229,7 +188,7 @@ class _DashboardCalendarState extends State<DashboardCalendar> {
                 child: Center(
                   child: Text(
                     '${day.day}',
-                    style: const TextStyle(color: Colors.white),
+                    style: GoogleFonts.poppins(color: Colors.white),
                   ),
                 ),
               ),
