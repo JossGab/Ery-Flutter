@@ -9,6 +9,8 @@ class Habit {
   final DateTime fechaCreacion;
   final int rachaActual;
 
+  final bool completadoHoy;
+
   Habit({
     required this.id,
     required this.nombre,
@@ -17,6 +19,8 @@ class Habit {
     this.metaObjetivo,
     required this.fechaCreacion,
     required this.rachaActual,
+
+    this.completadoHoy = false,
   });
 
   factory Habit.fromJson(Map<String, dynamic> json) {
@@ -28,6 +32,8 @@ class Habit {
       metaObjetivo: json['meta_objetivo'] as int?,
       fechaCreacion: DateTime.parse(json['fecha_creacion'] as String),
       rachaActual: json['racha_actual'] as int? ?? 0, // Asignamos 0 si es nulo
+
+      completadoHoy: json['completado_hoy'] as bool? ?? false,
     );
   }
 
@@ -42,5 +48,29 @@ class Habit {
       // No incluimos id, fechaCreacion o rachaActual porque generalmente
       // son gestionados por el backend y no se envían al crear/actualizar.
     };
+  }
+
+  // --- AÑADIDO: Método copyWith ---
+  // Esencial para actualizar el estado de forma inmutable.
+  Habit copyWith({
+    int? id,
+    String? nombre,
+    String? descripcion,
+    String? tipo,
+    int? metaObjetivo,
+    DateTime? fechaCreacion,
+    int? rachaActual,
+    bool? completadoHoy,
+  }) {
+    return Habit(
+      id: id ?? this.id,
+      nombre: nombre ?? this.nombre,
+      descripcion: descripcion ?? this.descripcion,
+      tipo: tipo ?? this.tipo,
+      metaObjetivo: metaObjetivo ?? this.metaObjetivo,
+      fechaCreacion: fechaCreacion ?? this.fechaCreacion,
+      rachaActual: rachaActual ?? this.rachaActual,
+      completadoHoy: completadoHoy ?? this.completadoHoy,
+    );
   }
 }

@@ -1,6 +1,11 @@
+// lib/views/routines/create_routine_modal.dart
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
 import '../../providers/routines_provider.dart';
 
 class CreateRoutineModal extends StatefulWidget {
@@ -24,6 +29,7 @@ class _CreateRoutineModalState extends State<CreateRoutineModal> {
   }
 
   Future<void> _submitForm() async {
+    // Valida que el formulario sea correcto y que no se esté procesando otra solicitud.
     if (!_formKey.currentState!.validate() || _isLoading) return;
 
     setState(() => _isLoading = true);
@@ -59,21 +65,29 @@ class _CreateRoutineModalState extends State<CreateRoutineModal> {
 
   @override
   Widget build(BuildContext context) {
+    // El padding se ajusta al teclado para que no tape el formulario.
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.06),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.1),
+                  Colors.white.withOpacity(0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+              border: Border.all(color: Colors.white.withOpacity(0.15)),
             ),
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 36),
             child: Form(
@@ -82,19 +96,23 @@ class _CreateRoutineModalState extends State<CreateRoutineModal> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'Crear Nueva Rutina',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  // --- MEJORA: Título más prominente y centrado ---
+                  Center(
+                    child: Text(
+                      'Crear Nueva Rutina',
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
+                  // --- MEJORA: Campos de texto rediseñados ---
                   _buildTextField(
                     controller: _nameController,
                     label: 'Nombre de la Rutina',
+                    icon: Icons.flag_outlined,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'El nombre es obligatorio';
@@ -106,36 +124,14 @@ class _CreateRoutineModalState extends State<CreateRoutineModal> {
                   _buildTextField(
                     controller: _descriptionController,
                     label: 'Descripción (Opcional)',
-                    maxLines: 2,
+                    icon: Icons.edit_note_outlined,
+                    maxLines: 3,
                   ),
-                  const SizedBox(height: 28),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child:
-                        _isLoading
-                            ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                            : const Text(
-                              'Crear Rutina',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                  ),
+                  const SizedBox(height: 32),
+                  // --- MEJORA: Botón con diseño premium y animación ---
+                  _buildSubmitButton(),
                 ],
-              ),
+              ).animate().fadeIn(duration: 300.ms),
             ),
           ),
         ),
@@ -143,9 +139,11 @@ class _CreateRoutineModalState extends State<CreateRoutineModal> {
     );
   }
 
+  /// --- MEJORA: Widget para construir los campos de texto ---
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
+    required IconData icon,
     int maxLines = 1,
     String? Function(String?)? validator,
   }) {
@@ -157,16 +155,79 @@ class _CreateRoutineModalState extends State<CreateRoutineModal> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70),
+        prefixIcon: Icon(icon, color: Colors.white60),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-        enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.white24),
+        fillColor: Colors.black.withOpacity(0.2),
+        border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
           borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
+            width: 1.5,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// --- MEJORA: Widget para construir el botón de envío ---
+  Widget _buildSubmitButton() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary,
+            Colors.purpleAccent.withOpacity(0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ElevatedButton.icon(
+        onPressed: _isLoading ? null : _submitForm,
+        icon:
+            _isLoading
+                ? Container()
+                : const Icon(Icons.add_task_rounded, color: Colors.white),
+        label:
+            _isLoading
+                ? const SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+                : Text(
+                  'Crear Rutina',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
     );

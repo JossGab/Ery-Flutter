@@ -266,4 +266,23 @@ class AuthProvider with ChangeNotifier {
     _isLoading = loading;
     notifyListeners();
   }
+
+  // --- AÑADIR ESTE MÉTODO ---
+  /// Busca un hábito por su ID en la lista local y lo marca como completado.
+  /// Esto actualiza la UI instantáneamente sin necesidad de una nueva llamada a la API.
+  void markHabitAsCompleted(int habitId) {
+    final habitIndex = _habits.indexWhere((h) => h.id == habitId);
+
+    if (habitIndex != -1) {
+      final oldHabit = _habits[habitIndex];
+      // Usamos el método `copyWith` que añadimos a nuestro modelo Habit
+      _habits[habitIndex] = oldHabit.copyWith(
+        completadoHoy: true,
+        // Opcional: Aumentar la racha localmente para una respuesta visual inmediata
+        rachaActual: oldHabit.rachaActual + 1,
+      );
+      // Notifica a los widgets para que se redibujen con el nuevo estado
+      notifyListeners();
+    }
+  }
 }

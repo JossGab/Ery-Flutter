@@ -1,81 +1,75 @@
-import 'dart:ui';
-import 'package:flutter/material.dart';
+// lib/views/dashboard/widgets/stat_card.dart
 
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
+/// Una tarjeta rediseñada para mostrar una estadística clave con un estilo moderno.
 class StatCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String value;
+  final Color color;
 
   const StatCard({
     super.key,
     required this.icon,
     required this.title,
     required this.value,
+    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 6),
+    return Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            decoration: BoxDecoration(
+              // Usamos un gradiente con el color base para más profundidad
+              gradient: LinearGradient(
+                colors: [color.withOpacity(0.25), color.withOpacity(0.1)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.blueAccent.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: color.withOpacity(0.4)),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Icono con un fondo suave
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: color.withOpacity(0.8),
+                  child: Icon(icon, color: Colors.white, size: 24),
                 ),
-                child: Icon(icon, color: Colors.blueAccent, size: 28),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      value,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 12),
+                // Valor numérico destacado
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                // Título de la estadística
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-    );
+        )
+        .animate()
+        .fadeIn(duration: 500.ms)
+        .scaleXY(begin: 0.9, curve: Curves.easeOutCubic);
   }
 }

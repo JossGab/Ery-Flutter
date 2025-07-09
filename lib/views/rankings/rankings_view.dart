@@ -1,74 +1,102 @@
+// lib/views/rankings/rankings_view.dart
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
 import '../../providers/rankings_provider.dart';
 import '../../providers/auth_provider.dart';
 
-class RankingsView extends StatelessWidget {
+class RankingsView extends StatefulWidget {
   const RankingsView({super.key});
 
   @override
+  State<RankingsView> createState() => _RankingsViewState();
+}
+
+class _RankingsViewState extends State<RankingsView>
+    with TickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Consumer<RankingsProvider>(
-      builder: (context, rankingsProvider, child) {
-        return DefaultTabController(
-          length: 2,
-          child: Scaffold(
-            backgroundColor: const Color(0xFF1B1D2A),
-            appBar: PreferredSize(
-              preferredSize: const Size.fromHeight(70),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
-                  border: const Border(
-                    bottom: BorderSide(color: Colors.white24, width: 0.5),
-                  ),
-                ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const TabBar(
-                        indicator: BoxDecoration(
-                          color: Colors.amberAccent,
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                        ),
-                        labelColor: Colors.black,
-                        unselectedLabelColor: Colors.white70,
-                        labelStyle: TextStyle(fontWeight: FontWeight.w600),
-                        tabs: [Tab(text: '🏆 Global'), Tab(text: '🌎 País')],
-                      ),
-                    ),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      // --- MEJORA: AppBar rediseñado con BackdropFilter y TabBar corregido ---
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(120.0),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: AppBar(
+              backgroundColor: Colors.white.withOpacity(0.05),
+              automaticallyImplyLeading: false,
+              elevation: 0,
+              title: Padding(
+                padding: const EdgeInsets.only(top: 20.0),
+                child: Text(
+                  'Clasificación',
+                  style: GoogleFonts.poppins(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-            ),
-            body: const TabBarView(
-              children: [
-                _RankingList(
-                  scope: 'global',
-                  key: PageStorageKey('global_ranking'),
+              centerTitle: true,
+              bottom: TabBar(
+                controller: _tabController,
+                // --- INICIO DE LA CORRECCIÓN ---
+                indicatorSize:
+                    TabBarIndicatorSize
+                        .tab, // Asegura que el indicador ocupe toda la pestaña
+                indicatorPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 6,
                 ),
-                _RankingList(
-                  scope: 'country',
-                  key: PageStorageKey('country_ranking'),
+                indicator: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.amberAccent,
                 ),
-              ],
+                // --- FIN DE LA CORRECCIÓN ---
+                labelColor: Colors.black,
+                unselectedLabelColor: Colors.white70,
+                labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                unselectedLabelStyle: GoogleFonts.poppins(),
+                tabs: const [Tab(text: '🏆 Global'), Tab(text: '🌎 País')],
+              ),
             ),
           ),
-        );
-      },
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: const [
+          _RankingList(scope: 'global', key: PageStorageKey('global_ranking')),
+          _RankingList(
+            scope: 'country',
+            key: PageStorageKey('country_ranking'),
+          ),
+        ],
+      ),
     );
   }
 }
 
+/// Widget que muestra la lista de ranking para un 'scope' específico.
 class _RankingList extends StatefulWidget {
   final String scope;
   const _RankingList({super.key, required this.scope});
@@ -82,29 +110,31 @@ class __RankingListState extends State<_RankingList> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Establece el scope y carga los datos iniciales
       context.read<RankingsProvider>().setScope(widget.scope);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final rankingsProvider = context.watch<RankingsProvider>();
-    final currentUserId = context.watch<AuthProvider>().user?.id;
+    // Usamos 'select' para escuchar solo los cambios relevantes y evitar reconstrucciones innecesarias
+    final provider = context.select((RankingsProvider p) => p);
+    final currentUserId = context.select((AuthProvider a) => a.user?.id);
 
-    if (rankingsProvider.isLoading) {
+    if (provider.isLoading && provider.scope == widget.scope) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (rankingsProvider.error.isNotEmpty) {
+    if (provider.error.isNotEmpty && provider.scope == widget.scope) {
       return Center(
         child: Text(
-          'Error: ${rankingsProvider.error}',
+          'Error: ${provider.error}',
           style: const TextStyle(color: Colors.redAccent),
         ),
       );
     }
 
-    if (rankingsProvider.rankings.isEmpty) {
+    if (provider.rankings.isEmpty && provider.scope == widget.scope) {
       return const Center(
         child: Text(
           'No hay datos en la clasificación.',
@@ -113,13 +143,18 @@ class __RankingListState extends State<_RankingList> {
       );
     }
 
+    // Solo mostramos la lista si el scope del provider coincide con el de este widget
+    if (provider.scope != widget.scope) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return RefreshIndicator(
-      onRefresh: () => rankingsProvider.fetchRankings(),
+      onRefresh: () => provider.fetchRankings(),
       child: ListView.builder(
-        itemCount: rankingsProvider.rankings.length,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        itemCount: provider.rankings.length,
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 80),
         itemBuilder: (context, index) {
-          final user = rankingsProvider.rankings[index];
+          final user = provider.rankings[index];
           final isCurrentUser = user.userId.toString() == currentUserId;
 
           final place = switch (index) {
@@ -129,51 +164,56 @@ class __RankingListState extends State<_RankingList> {
             _ => '#${index + 1}',
           };
 
-          return Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color:
-                  isCurrentUser
-                      ? Colors.amber.withOpacity(0.25)
-                      : Colors.white.withOpacity(0.04),
-              border: Border.all(color: Colors.white24, width: 0.6),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          // --- MEJORA: Tarjeta de usuario con diseño premium ---
+          return Card(
+                elevation: 0,
+                color:
+                    isCurrentUser
+                        ? Colors.amber.withOpacity(0.15)
+                        : Colors.white.withOpacity(0.05),
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side:
+                      isCurrentUser
+                          ? const BorderSide(color: Colors.amber, width: 1.5)
+                          : BorderSide(color: Colors.white.withOpacity(0.1)),
+                ),
                 child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.white10,
-                    child: Text(
-                      place,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: isCurrentUser ? Colors.black : Colors.white,
-                      ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  leading: Text(
+                    place,
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color:
+                          isCurrentUser ? Colors.amber.shade200 : Colors.white,
                     ),
                   ),
                   title: Text(
                     user.nombre,
-                    style: TextStyle(
-                      color: isCurrentUser ? Colors.amber : Colors.white,
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
                   ),
                   trailing: Text(
                     '${user.score} días',
-                    style: const TextStyle(
-                      color: Colors.amberAccent,
+                    style: GoogleFonts.poppins(
+                      color: isCurrentUser ? Colors.white : Colors.amberAccent,
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
                   ),
                 ),
-              ),
-            ),
-          );
+              )
+              .animate()
+              .fadeIn(delay: (50 * index).ms, duration: 400.ms)
+              .slideX(begin: 0.2, curve: Curves.easeOut);
         },
       ),
     );

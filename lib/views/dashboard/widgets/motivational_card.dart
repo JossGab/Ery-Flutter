@@ -1,119 +1,166 @@
+// lib/views/dashboard/widgets/motivational_card.dart
+
 import 'dart:math';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
-class MotivationalCard extends StatefulWidget {
-  const MotivationalCard({super.key});
+/// Modelo para una frase, permitiendo incluir autor.
+class Quote {
+  final String text;
+  final String author;
 
-  @override
-  State<MotivationalCard> createState() => _MotivationalCardState();
+  const Quote(this.text, {this.author = "Anónimo"});
 }
 
-class _MotivationalCardState extends State<MotivationalCard> {
-  static const List<String> _quotes = [
-    "La disciplina es el puente entre las metas y los logros.",
-    "El secreto del éxito es la constancia en el propósito.",
-    "Cae siete veces, levántate ocho.",
-    "El futuro depende de lo que hagas hoy.",
-    "No cuentes los días, haz que los días cuenten.",
-    "La mejor forma de predecir el futuro es creándolo.",
-    "Un pequeño progreso cada día suma grandes resultados.",
-    "La voluntad de ganar es importante, pero la voluntad de prepararse es vital.",
-    "Cree que puedes y ya estarás a medio camino.",
-    "La acción es la clave fundamental de todo éxito.",
-    "El dolor que sientes hoy será la fuerza que sentirás mañana.",
-    "No tengas miedo de renunciar a lo bueno para ir por lo grandioso.",
-    "El éxito no es el final, el fracaso no es la ruina, el coraje de continuar es lo que cuenta.",
-    "Tu único límite es tu mente.",
-    "La motivación nos impulsa a comenzar y el hábito nos permite continuar.",
-    "Si buscas resultados distintos, no hagas siempre lo mismo.",
-    "La vida es un 10% lo que te pasa y un 90% cómo reaccionas a ello.",
-    "El experto en algo fue una vez un principiante.",
-    "No esperes. El momento nunca será el 'perfecto'.",
-    "Haz de cada día tu obra maestra.",
+/// Una tarjeta que muestra una frase motivacional aleatoria cada vez que se construye.
+class MotivationalCard extends StatelessWidget {
+  const MotivationalCard({super.key});
+
+  // --- MEJORA: Lista de frases ampliada y más variada ---
+  static const List<Quote> _quotes = [
+    Quote(
+      "La disciplina es el puente entre las metas y los logros.",
+      author: "Jim Rohn",
+    ),
+    Quote(
+      "El secreto del éxito es la constancia en el propósito.",
+      author: "Benjamin Disraeli",
+    ),
+    Quote("Cae siete veces, levántate ocho.", author: "Proverbio Japonés"),
+    Quote("El futuro depende de lo que hagas hoy.", author: "Mahatma Gandhi"),
+    Quote(
+      "No cuentes los días, haz que los días cuenten.",
+      author: "Muhammad Ali",
+    ),
+    Quote(
+      "La mejor forma de predecir el futuro es creándolo.",
+      author: "Peter Drucker",
+    ),
+    Quote("Un pequeño progreso cada día suma grandes resultados."),
+    Quote(
+      "Cree que puedes y ya estarás a medio camino.",
+      author: "Theodore Roosevelt",
+    ),
+    Quote(
+      "La acción es la clave fundamental de todo éxito.",
+      author: "Pablo Picasso",
+    ),
+    Quote("El dolor que sientes hoy será la fuerza que sentirás mañana."),
+    Quote("Tu único límite es tu mente."),
+    Quote(
+      "La motivación nos impulsa a comenzar y el hábito nos permite continuar.",
+      author: "Jim Ryun",
+    ),
+    Quote(
+      "El 80% del éxito se basa simplemente en insistir.",
+      author: "Woody Allen",
+    ),
+    Quote("El éxito es la suma de pequeños esfuerzos repetidos día tras día."),
+    Quote("No te detengas hasta que te sientas orgulloso."),
+    Quote(
+      "La pregunta no es quién me va a dejar, es quién me va a detener.",
+      author: "Ayn Rand",
+    ),
+    Quote("Convierte tus heridas en sabiduría.", author: "Oprah Winfrey"),
+    Quote("Si no te gustan las cosas, ¡cámbialas! No eres un árbol."),
+    Quote(
+      "Un objetivo sin un plan es solo un deseo.",
+      author: "Antoine de Saint-Exupéry",
+    ),
+    Quote(
+      "La vida se encoge o se expande en proporción al coraje de uno.",
+      author: "Anaïs Nin",
+    ),
+    Quote(
+      "Lo que la mente del hombre puede concebir y creer, puede lograr.",
+      author: "Napoleon Hill",
+    ),
+    Quote(
+      "El momento en que quieres renunciar es el momento en que debes seguir insistiendo.",
+    ),
+    Quote(
+      "La inspiración existe, pero tiene que encontrarte trabajando.",
+      author: "Pablo Picasso",
+    ),
+    Quote(
+      "No juzgues cada día por la cosecha que recoges, sino por las semillas que plantas.",
+    ),
   ];
 
-  late String _displayQuote;
-
-  @override
-  void initState() {
-    super.initState();
-    _displayQuote = _randomQuote();
-  }
-
-  String _randomQuote() {
+  /// Obtiene una frase aleatoria de la lista.
+  Quote _getRandomQuote() {
     return _quotes[Random().nextInt(_quotes.length)];
-  }
-
-  void _nextQuote() {
-    setState(() {
-      _displayQuote = _randomQuote();
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragEnd: (_) => _nextQuote(),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.06),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.12)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.25),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
-                ),
+    // --- MEJORA: Se obtiene una nueva frase cada vez que el widget se redibuja ---
+    // Esto sucede al volver al dashboard, garantizando una frase fresca.
+    final currentQuote = _getRandomQuote();
+
+    return Container(
+          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF6366F1).withOpacity(0.1),
+                const Color(0xFF818CF8).withOpacity(0.05),
               ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF818CF8).withOpacity(0.25),
-                    shape: BoxShape.circle,
-                  ),
-                  padding: const EdgeInsets.all(14),
-                  child: const Icon(
-                    Icons.format_quote_rounded,
-                    color: Color(0xFF818CF8),
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Container(
-                      constraints: const BoxConstraints(maxWidth: 380),
-                      alignment: Alignment.center,
-                      child: Text(
-                        _displayQuote,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontStyle: FontStyle.italic,
-                          fontWeight: FontWeight.w400,
-                          height: 1.6,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ),
-      ),
-    );
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.lightbulb_circle_outlined,
+                color: Colors.amberAccent,
+                size: 40,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '"${currentQuote.text}"',
+                key: ValueKey(
+                  currentQuote.text,
+                ), // Key para que la animación se reinicie
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w500,
+                  height: 1.5,
+                  fontStyle: FontStyle.italic,
+                ),
+              ).animate().fadeIn(
+                duration: 600.ms,
+              ), // Animación sutil de entrada
+              const SizedBox(height: 12),
+              Text(
+                "— ${currentQuote.author}",
+                key: ValueKey(currentQuote.author), // Key para la animación
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
+              ).animate().fadeIn(duration: 600.ms),
+            ],
+          ),
+        )
+        .animate()
+        .fadeIn(duration: 500.ms)
+        .move(begin: const Offset(0, 30), curve: Curves.easeOutCubic);
   }
 }

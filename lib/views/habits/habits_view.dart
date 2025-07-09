@@ -1,13 +1,38 @@
+// lib/views/habits/habits_view.dart
+
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../models/habit_model.dart';
 import 'widgets/habit_card.dart';
 import 'widgets/create_habit_modal.dart';
 
-class HabitsView extends StatelessWidget {
+class HabitsView extends StatefulWidget {
   const HabitsView({super.key});
+
+  @override
+  State<HabitsView> createState() => _HabitsViewState();
+}
+
+class _HabitsViewState extends State<HabitsView>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,110 +43,107 @@ class HabitsView extends StatelessWidget {
     final badHabits = habits.where((h) => h.tipo == 'MAL_HABITO').toList();
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCreateHabitModal(context),
-        label: const Text('Nuevo Hábito'),
-        icon: const Icon(Icons.add_rounded),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+      backgroundColor: Colors.transparent,
+      floatingActionButton: _buildFloatingActionButton(context),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(120.0),
+        child: _buildAppBar(),
       ),
-      body: RefreshIndicator(
-        onRefresh: () => context.read<AuthProvider>().fetchDashboardData(),
-        child:
-            authProvider.isLoading && habits.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : habits.isEmpty
-                ? _buildEmptyState()
-                : CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    _buildHabitListSection(
-                      goodHabits,
-                      "Hábitos Positivos",
-                      Icons.trending_up,
-                      Colors.greenAccent,
-                    ),
-                    _buildHabitListSection(
-                      badHabits,
-                      "Rompiendo Cadenas",
-                      Icons.warning_amber_rounded,
-                      Colors.orangeAccent,
-                    ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 100)),
-                  ],
-                ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _HabitListPage(
+            habits: goodHabits,
+            emptyMessage:
+                "Aún no tienes hábitos constructivos.\n¡Crea uno para empezar!",
+            icon: Icons.rocket_launch_outlined,
+          ),
+          _HabitListPage(
+            habits: badHabits,
+            emptyMessage:
+                "No estás rompiendo ninguna cadena.\n¡Define un mal hábito a superar!",
+            icon: Icons.shield_outlined,
+          ),
+        ],
       ),
     );
   }
 
-  SliverPadding _buildHabitListSection(
-    List<Habit> habits,
-    String title,
-    IconData icon,
-    Color iconColor,
-  ) {
-    if (habits.isEmpty) {
-      return const SliverPadding(
-        padding: EdgeInsets.zero,
-        sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
-      );
-    }
-
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      sliver: SliverList(
-        delegate: SliverChildListDelegate([
-          _buildSectionHeader(title, icon, iconColor),
-          const SizedBox(height: 12),
-          ...habits.map((habit) => HabitCard(habit: habit)),
-        ]),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, IconData icon, Color iconColor) {
-    return Row(
-      children: [
-        Icon(icon, color: iconColor, size: 22),
-        const SizedBox(width: 10),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+  Widget _buildAppBar() {
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: AppBar(
+          backgroundColor: Colors.white.withOpacity(0.05),
+          automaticallyImplyLeading: false,
+          elevation: 0,
+          title: Padding(
+            padding: const EdgeInsets.only(top: 20.0),
+            child: Text(
+              '******',
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          centerTitle: true,
+          bottom: TabBar(
+            controller: _tabController,
+            // --- INICIO DE LA CORRECCIÓN ---
+            indicatorSize:
+                TabBarIndicatorSize
+                    .tab, // 1. Le decimos que ocupe toda la pestaña
+            indicatorPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 6,
+            ), // 2. Mantenemos el padding que se ve bien
+            indicator: BoxDecoration(
+              // 3. El BoxDecoration se mantiene igual
+              borderRadius: BorderRadius.circular(12),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+            ),
+            // --- FIN DE LA CORRECCIÓN ---
+            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+            unselectedLabelStyle: GoogleFonts.poppins(),
+            tabs: const [
+              Tab(text: 'Constructivos'),
+              Tab(text: 'Rompiendo Cadenas'),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.flag_circle_outlined, size: 80, color: Colors.white24),
-            SizedBox(height: 20),
-            Text(
-              '¡Es hora de empezar tu nueva rutina!',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white70,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 10),
-            Text(
-              'Presiona el botón "+" para crear tu primer hábito y comenzar a construir tu mejor versión.',
-              style: TextStyle(fontSize: 16, color: Colors.white38),
-              textAlign: TextAlign.center,
-            ),
-          ],
+  Widget _buildFloatingActionButton(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [Theme.of(context).colorScheme.primary, Colors.purpleAccent],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+            blurRadius: 15,
+            spreadRadius: 2,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: FloatingActionButton.extended(
+        onPressed: () => _showCreateHabitModal(context),
+        label: Text(
+          'Nuevo Hábito',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
+        icon: const Icon(Icons.add_rounded),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
     );
   }
@@ -130,15 +152,70 @@ class HabitsView extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1B1D2A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder:
           (_) => ChangeNotifierProvider.value(
             value: Provider.of<AuthProvider>(context, listen: false),
             child: const CreateHabitModal(),
           ),
+    );
+  }
+}
+
+class _HabitListPage extends StatelessWidget {
+  final List<Habit> habits;
+  final String emptyMessage;
+  final IconData icon;
+
+  const _HabitListPage({
+    required this.habits,
+    required this.emptyMessage,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+
+    if (habits.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0),
+          child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 80, color: Colors.white24),
+                  const SizedBox(height: 20),
+                  Text(
+                    emptyMessage,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      color: Colors.white70,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              )
+              .animate()
+              .fadeIn(duration: 500.ms)
+              .scale(begin: const Offset(0.8, 0.8)),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => authProvider.fetchDashboardData(),
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
+        itemCount: habits.length,
+        itemBuilder: (context, index) {
+          final habit = habits[index];
+          return HabitCard(habit: habit)
+              .animate()
+              .fadeIn(delay: (100 * index).ms, duration: 400.ms)
+              .slideY(begin: 0.3, curve: Curves.easeOut);
+        },
+      ),
     );
   }
 }

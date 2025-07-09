@@ -1,3 +1,5 @@
+// lib/views/habits/widgets/habit_card.dart
+
 import 'dart:ui';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -5,22 +7,79 @@ import 'package:provider/provider.dart';
 import '../../../models/habit_model.dart';
 import '../../../providers/auth_provider.dart';
 import 'edit_habit_modal.dart';
+// Importa el diálogo de éxito que creamos
+import '../../../widgets/common/success_dialog.dart';
 
 class HabitCard extends StatelessWidget {
   final Habit habit;
   const HabitCard({super.key, required this.habit});
 
+  /// Muestra el modal para editar el hábito.
+  void _showEditModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (_) =>
+          // Pasamos el AuthProvider al modal para que pueda actualizar el estado
+          ChangeNotifierProvider.value(
+            value: context.read<AuthProvider>(),
+            child: EditHabitModal(habit: habit),
+          ),
+    );
+  }
+
+  /// Muestra la confirmación para eliminar el hábito.
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            backgroundColor: const Color(0xFF1F2937),
+            title: const Text(
+              'Confirmar Eliminación',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: Text(
+              '¿Estás seguro de que quieres eliminar el hábito "${habit.nombre}"? Esta acción no se puede deshacer.',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Cancelar',
+                  style: TextStyle(color: Colors.white54),
+                ),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(backgroundColor: Colors.redAccent),
+                onPressed: () {
+                  // Usamos el AuthProvider para eliminar el hábito
+                  context.read<AuthProvider>().deleteHabit(habit.id);
+                  Navigator.pop(context);
+                },
+                child: const Text(
+                  'Eliminar',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
+  /// Muestra el menú de opciones (Editar/Eliminar).
   void _showOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder:
           (_) => Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF1F2937),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1F2937),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: Wrap(
               children: [
@@ -30,7 +89,7 @@ class HabitCard extends StatelessWidget {
                     color: Colors.white70,
                   ),
                   title: const Text(
-                    'Editar Hábito',
+                    'En construccion',
                     style: TextStyle(color: Colors.white),
                   ),
                   onTap: () {
@@ -58,65 +117,31 @@ class HabitCard extends StatelessWidget {
     );
   }
 
-  void _showEditModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => EditHabitModal(habit: habit),
-    );
-  }
-
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (_) => AlertDialog(
-            backgroundColor: const Color(0xFF1F2937),
-            title: const Text(
-              'Confirmar Eliminación',
-              style: TextStyle(color: Colors.white),
-            ),
-            content: Text(
-              '¿Estás seguro de que quieres eliminar el hábito "${habit.nombre}"? Esta acción no se puede deshacer.',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'Cancelar',
-                  style: TextStyle(color: Colors.white54),
-                ),
-              ),
-              TextButton(
-                style: TextButton.styleFrom(backgroundColor: Colors.redAccent),
-                onPressed: () {
-                  context.read<AuthProvider>().deleteHabit(habit.id);
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  'Eliminar',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-    );
-  }
-
-  void _logProgress(BuildContext context, Map<String, dynamic> payload) {
+  /// Registra el progreso, muestra el diálogo y actualiza el estado.
+  void _completeHabit(BuildContext context, Map<String, dynamic> payload) {
     final authProvider = context.read<AuthProvider>();
     final logData = {
       'habito_id': habit.id,
       'fecha_registro': DateTime.now().toIso8601String().substring(0, 10),
       ...payload,
     };
-    authProvider.logHabitProgress(logData).catchError((e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
-      );
-    });
+
+    authProvider
+        .logHabitProgress(logData)
+        .then((_) {
+          // Éxito: Muestra el diálogo y actualiza la UI
+          showSuccessDialog(context, habit.nombre);
+          authProvider.markHabitAsCompleted(habit.id);
+        })
+        .catchError((e) {
+          // Error: Muestra un SnackBar con el mensaje de error
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        });
   }
 
   @override
@@ -147,73 +172,14 @@ class HabitCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Título y menú
-                Row(
-                  children: [
-                    Icon(
-                      isBadHabit
-                          ? Icons.shield_outlined
-                          : Icons.favorite_border,
-                      color: accentColor,
-                      size: 28,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        habit.nombre,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Column(
-                      children: [
-                        const Icon(
-                          Icons.local_fire_department,
-                          color: Colors.amber,
-                          size: 20,
-                        ),
-                        Text(
-                          '${habit.rachaActual}d',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.more_vert, color: Colors.white60),
-                      onPressed: () => _showOptions(context),
-                    ),
-                  ],
-                ),
-
-                // Descripción
+                _buildHeader(context, isBadHabit, accentColor),
                 if (habit.descripcion != null && habit.descripcion!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 40, top: 8, bottom: 8),
-                    child: Text(
-                      habit.descripcion!,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-
-                // Barra de progreso si es numérico
+                  _buildDescription(),
                 if (habit.tipo == 'MEDIBLE_NUMERICO')
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: _buildProgressBar(habit, accentColor),
                   ),
-
                 const SizedBox(height: 14),
                 _buildActionButton(context, accentColor),
               ],
@@ -224,16 +190,67 @@ class HabitCard extends StatelessWidget {
     );
   }
 
+  Widget _buildHeader(
+    BuildContext context,
+    bool isBadHabit,
+    Color accentColor,
+  ) {
+    return Row(
+      children: [
+        Icon(
+          isBadHabit ? Icons.shield_outlined : Icons.favorite_border,
+          color: accentColor,
+          size: 28,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            habit.nombre,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const Icon(Icons.local_fire_department, color: Colors.amber, size: 20),
+        const SizedBox(width: 4),
+        Text(
+          '${habit.rachaActual}d',
+          style: const TextStyle(color: Colors.white70, fontSize: 13),
+        ),
+        IconButton(
+          icon: const Icon(Icons.more_vert, color: Colors.white60),
+          onPressed: () => _showOptions(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDescription() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 40, top: 8, bottom: 8),
+      child: Text(
+        habit.descripcion!,
+        style: const TextStyle(color: Colors.white70, fontSize: 14),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
   Widget _buildProgressBar(Habit habit, Color color) {
-    double current = 3; // Valor fijo de prueba
+    // Aquí puedes conectar el progreso real si lo tienes, por ahora usamos un valor de prueba
+    double currentProgress = 0; // Deberías obtener este valor del estado
     double goal = habit.metaObjetivo?.toDouble() ?? 1;
-    double percent = min(current / goal, 1);
+    double percent = goal > 0 ? min(currentProgress / goal, 1) : 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Progreso: $current / $goal',
+          'Progreso: $currentProgress / $goal',
           style: const TextStyle(color: Colors.white70, fontSize: 14),
         ),
         const SizedBox(height: 6),
@@ -250,23 +267,47 @@ class HabitCard extends StatelessWidget {
     );
   }
 
+  /// Decide qué botón mostrar basado en el tipo de hábito y si ya fue completado.
   Widget _buildActionButton(BuildContext context, Color accentColor) {
+    // --- LÓGICA PRINCIPAL ---
+    // 1. Si el hábito ya fue completado, muestra un botón deshabilitado.
+    if (habit.completadoHoy) {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: null, // null deshabilita el botón
+          icon: const Icon(Icons.check_circle_rounded),
+          label: const Text('Completado Hoy'),
+          style: ElevatedButton.styleFrom(
+            disabledBackgroundColor: Colors.green.withOpacity(0.2),
+            disabledForegroundColor: Colors.white.withOpacity(0.7),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+        ),
+      );
+    }
+
+    // 2. Si no, muestra el botón de acción correspondiente.
     late String label;
     late VoidCallback onPressed;
 
     switch (habit.tipo) {
       case 'SI_NO':
         label = 'Marcar como Completado';
-        onPressed = () => _logProgress(context, {'valor_booleano': true});
+        onPressed = () => _completeHabit(context, {'valor_booleano': true});
         break;
       case 'MAL_HABITO':
         label = 'Registrar Recaída';
-        onPressed = () => _logProgress(context, {'es_recaida': true});
+        onPressed = () => _completeHabit(context, {'es_recaida': true});
         break;
       case 'MEDIBLE_NUMERICO':
         label = 'Añadir Progreso';
         onPressed = () {
-          // Aquí podrías mostrar un modal de ingreso numérico
+          // Lógica para mostrar un diálogo y obtener el valor numérico
+          // ...
         };
         break;
       default:
@@ -287,10 +328,7 @@ class HabitCard extends StatelessWidget {
           elevation: 8,
           shadowColor: accentColor.withOpacity(0.5),
         ),
-        child: Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-        ),
+        child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }

@@ -1,7 +1,10 @@
+// lib/views/friends/tabs/search_users_tab.dart
+
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../providers/friends_provider.dart';
 import '../../../providers/auth_provider.dart';
 
@@ -30,19 +33,169 @@ class _SearchUsersTabState extends State<SearchUsersTab> {
     super.dispose();
   }
 
+  /// Ejecuta la búsqueda con un pequeño retraso para no sobrecargar la API.
   void _onSearchChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       final query = _searchController.text.trim();
-      context.read<FriendsProvider>().searchUsers(query);
+      if (mounted) {
+        context.read<FriendsProvider>().searchUsers(query);
+      }
     });
   }
 
-  Widget _buildActionButton(
-    FriendsProvider provider,
-    dynamic user,
-    String? currentUserId,
-  ) {
+  @override
+  Widget build(BuildContext context) {
+    // Obtenemos el ID del usuario actual para no mostrarlo en los resultados.
+    final currentUserId = context.watch<AuthProvider>().user?.id;
+
+    return Column(
+      children: [
+        // --- MEJORA: Campo de búsqueda rediseñado ---
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Buscar por nombre o email...',
+              hintStyle: const TextStyle(color: Colors.white60),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.08),
+              prefixIcon: const Icon(Icons.search, color: Colors.white70),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+        // --- MEJORA: Lista de resultados con estados y diseño mejorados ---
+        Expanded(
+          child: Consumer<FriendsProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoadingSearch) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (provider.searchResults.isEmpty) {
+                return _buildInitialOrEmptyState();
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+                itemCount: provider.searchResults.length,
+                itemBuilder: (context, index) {
+                  final user = provider.searchResults[index];
+                  return _UserResultCard(
+                        user: user,
+                        provider: provider,
+                        currentUserId: currentUserId,
+                      )
+                      .animate()
+                      .fadeIn(delay: (50 * index).ms, duration: 400.ms)
+                      .slideX(begin: 0.2, curve: Curves.easeOut);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Muestra un estado inicial o de "no se encontraron resultados".
+  Widget _buildInitialOrEmptyState() {
+    // Si el campo de búsqueda está vacío, muestra un mensaje inicial.
+    if (_searchController.text.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.search, size: 80, color: Colors.white24),
+            const SizedBox(height: 16),
+            Text(
+              'Encuentra nuevos amigos',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Escribe en la barra superior para buscar.',
+              style: GoogleFonts.poppins(color: Colors.white70),
+            ),
+          ],
+        ),
+      ).animate().fadeIn();
+    }
+    // Si se ha buscado algo pero no hay resultados.
+    return Center(
+      child: Text(
+        'No se encontraron usuarios.',
+        style: GoogleFonts.poppins(color: Colors.white70),
+      ),
+    );
+  }
+}
+
+/// --- MEJORA: Widget para la tarjeta de resultado de usuario ---
+class _UserResultCard extends StatelessWidget {
+  final dynamic user;
+  final FriendsProvider provider;
+  final String? currentUserId;
+
+  const _UserResultCard({
+    required this.user,
+    required this.provider,
+    required this.currentUserId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final userName = user?['nombre'] ?? 'Usuario';
+
+    return Card(
+      elevation: 0,
+      color: Colors.white.withOpacity(0.05),
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: CircleAvatar(
+          backgroundColor: Colors.indigoAccent.withOpacity(0.2),
+          child: Text(
+            userName[0].toUpperCase(),
+            style: const TextStyle(
+              color: Colors.indigoAccent,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        title: Text(
+          userName,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        trailing: _buildActionButton(context),
+      ),
+    );
+  }
+
+  /// Construye el botón de acción correcto (Agregar, Pendiente, Amigo).
+  Widget _buildActionButton(BuildContext context) {
     if (user == null ||
         user['id'] == null ||
         user['id'].toString() == currentUserId) {
@@ -69,7 +222,7 @@ class _SearchUsersTabState extends State<SearchUsersTab> {
     return ElevatedButton.icon(
       onPressed: () {
         provider.sendFriendInvitation(userId).then((success) {
-          if (mounted && success) {
+          if (success) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('¡Solicitud enviada!'),
@@ -79,146 +232,28 @@ class _SearchUsersTabState extends State<SearchUsersTab> {
           }
         });
       },
-      icon: const Icon(Icons.person_add_alt),
+      icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
       label: const Text("Agregar"),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.blueAccent,
         foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
 
+  /// Botón de estado para 'Amigo' o 'Pendiente'.
   Widget _statusButton(IconData icon, String text, Color color) {
     return ElevatedButton.icon(
-      onPressed: null,
-      icon: Icon(icon, color: Colors.white),
+      onPressed: null, // Deshabilitado
+      icon: Icon(icon, size: 18),
       label: Text(text),
       style: ElevatedButton.styleFrom(
-        disabledBackgroundColor: color.withOpacity(0.4),
-        disabledForegroundColor: Colors.white,
+        disabledBackgroundColor: color.withOpacity(0.2),
+        disabledForegroundColor: color,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final currentUserId = context.watch<AuthProvider>().user?.id;
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Buscar por nombre o email',
-              hintStyle: const TextStyle(color: Colors.white60),
-              filled: true,
-              fillColor: Colors.white.withOpacity(0.05),
-              prefixIcon: const Icon(Icons.search, color: Colors.white70),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Colors.white),
-              ),
-            ),
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
-        Expanded(
-          child: Consumer<FriendsProvider>(
-            builder: (context, provider, child) {
-              if (provider.isLoadingSearch) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                );
-              }
-              if (provider.searchResults.isEmpty &&
-                  _searchController.text.isNotEmpty) {
-                return const Center(
-                  child: Text(
-                    'No se encontraron usuarios.',
-                    style: TextStyle(color: Colors.white70, fontSize: 16),
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                itemCount: provider.searchResults.length,
-                itemBuilder: (context, index) {
-                  final user = provider.searchResults[index];
-                  final userName = user?['nombre'] ?? 'Usuario';
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 6,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.08),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.25),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.blueAccent.withOpacity(
-                                0.2,
-                              ),
-                              child: Text(
-                                userName[0].toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.blueAccent,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            title: Text(
-                              userName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                            trailing: _buildActionButton(
-                              provider,
-                              user,
-                              currentUserId,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 }
