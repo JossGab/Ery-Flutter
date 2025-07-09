@@ -81,7 +81,7 @@ class _HabitsViewState extends State<HabitsView>
           title: Padding(
             padding: const EdgeInsets.only(top: 20.0),
             child: Text(
-              '******',
+              'Mis Habitos',
               style: GoogleFonts.poppins(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
